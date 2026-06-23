@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>先知局 · 世界杯预测</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Polymarket 官方品牌色 */
+    --pm-blue: #2E5CFF;
+    --pm-blue-soft: rgba(46,92,255,0.12);
+    --bg: #15191d;          /* 官方 theme-color */
+    --surface: #1d2229;
+    --surface-2: #252b33;
+    --line: #2a313a;
+    --text: #ffffff;
+    --text-dim: #858d98;
+    --text-dimmer: #5a626c;
+    --green: #27ae60;
+    --green-soft: rgba(39,174,96,0.14);
+    --red: #e64800;
+    --red-soft: rgba(230,72,0,0.13);
+    --yes: #27ae60;
+    --no: #e64800;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #0b0d10;
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 440px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    padding-bottom: 70px;
+  }
+
+  /* ---------- 顶部 ---------- */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--bg); z-index: 20;
+  }
+  .logo { display: flex; align-items: center; gap: 7px; font-size: 17px; font-weight: 700; letter-spacing: -0.4px; }
+  .logo-mark {
+    width: 22px; height: 22px; border-radius: 5px; background: var(--pm-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+  }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .nav-search {
+    width: 32px; height: 32px; border-radius: 7px; background: var(--surface);
+    display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--text-dim);
+  }
+  .balance {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface); border-radius: 8px; padding: 6px 12px;
+  }
+  .balance-num { font-size: 14px; font-weight: 600; }
+  .balance-lbl { font-size: 11px; color: var(--text-dim); }
+
+  /* ---------- 分类导航（PM特征：横向滚动 tab） ---------- */
+  .cats {
+    display: flex; gap: 4px; padding: 11px 12px; overflow-x: auto;
+    border-bottom: 1px solid var(--line); scrollbar-width: none;
+  }
+  .cats::-webkit-scrollbar { display: none; }
+  .cat {
+    font-size: 13px; font-weight: 500; color: var(--text-dim);
+    white-space: nowrap; padding: 6px 12px; border-radius: 8px;
+  }
+  .cat.on { background: var(--surface-2); color: var(--text); }
+
+  /* ---------- 市场卡片列表 ---------- */
+  .markets { padding: 8px 12px 20px; }
+  .market {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .m-head { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 13px; }
+  .m-thumb {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--surface-2);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 19px;
+  }
+  .m-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .m-meta { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* 单行结果（PM经典：选项名 + 大百分比 + Yes/No按钮） */
+  .outcome { margin-bottom: 9px; }
+  .outcome:last-of-type { margin-bottom: 0; }
+  .o-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .o-name { font-size: 13px; font-weight: 500; }
+  .o-pct { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .o-btns { display: flex; gap: 7px; }
+  .o-btn {
+    flex: 1; text-align: center; padding: 9px 0; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: filter 0.12s;
+  }
+  .o-btn:active { filter: brightness(1.25); }
+  .o-yes { background: var(--green-soft); color: var(--green); }
+  .o-no { background: var(--red-soft); color: var(--red); }
+
+  /* 多选项市场（胜平负）用迷你概率条 */
+  .multi { margin-bottom: 11px; }
+  .multi-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; cursor: pointer; }
+  .multi-row:active .multi-name { color: var(--pm-blue); }
+  .multi-name { font-size: 13px; font-weight: 500; width: 72px; flex-shrink: 0; }
+  .multi-track { flex: 1; height: 7px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .multi-fill { height: 100%; background: var(--pm-blue); border-radius: 999px; }
+  .multi-pct { font-size: 13px; font-weight: 700; width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+  .multi-mult { font-size: 11px; color: var(--text-dim); width: 38px; text-align: right; }
+
+  .m-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--text-dimmer); margin-top: 12px;
+    padding-top: 11px; border-top: 1px solid var(--line);
+  }
+  .m-foot-r { display: flex; gap: 13px; }
+  .m-foot-item { display: flex; align-items: center; gap: 4px; }
+
+  /* ---------- 底部导航 ---------- */
+  .tabbar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 440px; background: var(--bg);
+    border-top: 1px solid var(--line); display: flex;
+    padding: 9px 0 calc(9px + env(safe-area-inset-bottom));
+  }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-dimmer); font-size: 10px; }
+  .tab.on { color: var(--text); }
+  .tab.on .tab-ic { color: var(--pm-blue); }
+  .tab-ic { font-size: 18px; }
+
+  .demo-tag {
+    text-align: center; font-size: 11px; color: var(--text-dimmer);
+    padding: 10px; background: #0b0d10;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="nav">
+    <div class="logo"><span class="logo-mark">先</span>先知局</div>
+    <div class="nav-right">
+      <div class="nav-search">🔍</div>
+      <div class="balance"><span class="balance-num">2,480</span><span class="balance-lbl">点</span></div>
+    </div>
+  </div>
+
+  <div class="cats">
+    <div class="cat on">最热</div>
+    <div class="cat">最新</div>
+    <div class="cat">小组赛</div>
+    <div class="cat">淘汰赛</div>
+    <div class="cat">夺冠</div>
+    <div class="cat">即将截止</div>
+  </div>
+
+  <div class="markets">
+
+    <!-- 胜平负市场（多选项，用概率条） -->
+    <div class="market">
+      <div class="m-head">
+        <div class="m-thumb">⚽</div>
+        <div>
+          <div class="m-title">葡萄牙 vs 西班牙，本场谁胜？</div>
+          <div class="m-meta">小组赛 F组 · 今晚 23:00 截止</div>
+        </div>
+      </div>
+      <div class="multi">
+        <div class="multi-row">
+          <span class="multi-name">葡萄牙胜</span>
+          <span class="multi-track"><span class="multi-fill" style="width:42%"></span></span>
+          <span class="multi-pct">42%</span>
+          <span class="multi-mult">2.1×</span>
+        </div>
+        <div class="multi-row">
+          <span class="multi-name">平局</span>
+          <span class="multi-track"><span class="multi-fill" style="width:21%"></span></span>
+          <span class="multi-pct">21%</span>
+          <span class="multi-mult">3.4×</span>
+        </div>
+        <div class="multi-row">
+          <span class="multi-name">西班牙胜</span>
+          <span class="multi-track"><span class="multi-fill" style="width:37%"></span></span>
+          <span class="multi-pct">37%</span>
+          <span class="multi-mult">2.6×</span>
+        </div>
+      </div>
+      <div class="m-foot">
+        <span>8,402 人预测</span>
+        <div class="m-foot-r">
+          <span class="m-foot-item">🔒 倍率已锁定</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 二元市场（Yes/No，PM最经典形态） -->
+    <div class="market">
+      <div class="m-head">
+        <div class="m-thumb">🥅</div>
+        <div>
+          <div class="m-title">本场双方都会进球吗？</div>
+          <div class="m-meta">小组赛 F组 · 今晚 23:00 截止</div>
+        </div>
+      </div>
+      <div class="outcome">
+        <div class="o-top"><span class="o-name">会 · 双方都进球</span><span class="o-pct" style="color:var(--green)">64%</span></div>
+        <div class="o-btns">
+          <div class="o-btn o-yes">预测「会」 1.6×</div>
+          <div class="o-btn o-no">预测「不会」 2.3×</div>
+        </div>
+      </div>
+      <div class="m-foot">
+        <span>5,113 人预测</span>
+        <div class="m-foot-r"><span class="m-foot-item">🔒 倍率已锁定</span></div>
+      </div>
+    </div>
+
+    <!-- 夺冠市场（长期，多选项滚动） -->
+    <div class="market">
+      <div class="m-head">
+        <div class="m-thumb">🏆</div>
+        <div>
+          <div class="m-title">谁能夺得本届世界杯冠军？</div>
+          <div class="m-meta">长期预测 · 决赛日截止</div>
+        </div>
+      </div>
+      <div class="multi">
+        <div class="multi-row">
+          <span class="multi-name">阿根廷</span>
+          <span class="multi-track"><span class="multi-fill" style="width:23%"></span></span>
+          <span class="multi-pct">23%</span>
+          <span class="multi-mult">4.3×</span>
+        </div>
+        <div class="multi-row">
+          <span class="multi-name">法国</span>
+          <span class="multi-track"><span class="multi-fill" style="width:19%"></span></span>
+          <span class="multi-pct">19%</span>
+          <span class="multi-mult">5.2×</span>
+        </div>
+        <div class="multi-row">
+          <span class="multi-name">巴西</span>
+          <span class="multi-track"><span class="multi-fill" style="width:16%"></span></span>
+          <span class="multi-pct">16%</span>
+          <span class="multi-mult">6.1×</span>
+        </div>
+        <div class="multi-row">
+          <span class="multi-name">西班牙</span>
+          <span class="multi-track"><span class="multi-fill" style="width:12%"></span></span>
+          <span class="multi-pct">12%</span>
+          <span class="multi-mult">8.0×</span>
+        </div>
+      </div>
+      <div class="m-foot">
+        <span>21,887 人预测</span>
+        <div class="m-foot-r"><span class="m-foot-item">查看全部 32 队 ›</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tabbar">
+    <div class="tab on"><span class="tab-ic">📊</span><span>市场</span></div>
+    <div class="tab"><span class="tab-ic">🏆</span><span>排行榜</span></div>
+    <div class="tab"><span class="tab-ic">🎖️</span><span>成就</span></div>
+    <div class="tab"><span class="tab-ic">👤</span><span>我的</span></div>
+  </div>
+
+</div>
+<div class="demo-tag">演示数据 · 高保真复刻 Polymarket 布局与配色（Poly Blue #2E5CFF / 背景 #15191d / Inter字体）</div>
+</body>
+</html>

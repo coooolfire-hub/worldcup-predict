@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>先知局 · 世界杯预测</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pm-blue:#2E5CFF; --pm-blue-soft:rgba(46,92,255,0.12);
+    --bg:#15191d; --surface:#1d2229; --surface-2:#252b33; --line:#2a313a;
+    --text:#fff; --text-dim:#858d98; --text-dimmer:#5a626c;
+    --green:#27ae60; --green-soft:rgba(39,174,96,0.14);
+    --red:#e64800; --red-soft:rgba(230,72,0,0.13);
+    --maxw:1200px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); font-family:'Inter','Noto Sans SC',sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  input { font-family:inherit; }
+
+  /* 顶栏 */
+  .nav { border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:20; }
+  .nav-inner { max-width:var(--maxw); margin:0 auto; display:flex; align-items:center; gap:16px; padding:12px 16px; }
+  .logo { display:flex; align-items:center; gap:7px; font-size:17px; font-weight:700; letter-spacing:-0.4px; cursor:pointer; flex-shrink:0; }
+  .logo-mark { width:22px; height:22px; border-radius:5px; background:var(--pm-blue); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; }
+  .search { display:none; flex:1; max-width:360px; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:8px 12px; }
+  .search input { background:none; border:none; outline:none; color:var(--text); font-size:13px; width:100%; }
+  .search-ic { color:var(--text-dim); font-size:14px; }
+  .nav-menu { display:none; gap:2px; }
+  .nav-menu .nav-item { font-size:14px; font-weight:500; color:var(--text-dim); padding:7px 12px; border-radius:8px; cursor:pointer; }
+  .nav-menu .nav-item.on { background:var(--surface-2); color:var(--text); }
+  .nav-menu .nav-item:hover { color:var(--text); }
+  .nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; margin-left:auto; }
+  .balance { display:flex; align-items:center; gap:5px; background:var(--surface); border-radius:8px; padding:6px 12px; cursor:pointer; }
+  .balance-num { font-size:14px; font-weight:600; }
+  .balance-lbl { font-size:11px; color:var(--text-dim); }
+  .login-btn { background:var(--pm-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; }
+  .login-btn:hover { filter:brightness(1.08); }
+  .avatar-btn { width:32px; height:32px; border-radius:50%; background:var(--surface-2); display:none; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
+
+  .container { max-width:var(--maxw); margin:0 auto; padding-bottom:90px; }
+  @media (min-width:768px){ .container { padding-bottom:40px; } }
+
+  /* 热门横幅（桌面） */
+  .hero { display:none; margin:16px; padding:20px 24px; background:linear-gradient(100deg,#1c2942 0%,var(--surface) 60%); border:1px solid var(--line); border-radius:14px; align-items:center; justify-content:space-between; }
+  .hero-l h2 { font-size:20px; font-weight:700; margin-bottom:6px; }
+  .hero-l p { font-size:13px; color:var(--text-dim); }
+  .hero-stat { display:flex; gap:28px; }
+  .hero-stat .n { font-size:22px; font-weight:700; }
+  .hero-stat .l { font-size:11px; color:var(--text-dim); margin-top:2px; }
+
+  .cats { display:flex; gap:4px; padding:11px 12px; overflow-x:auto; border-bottom:1px solid var(--line); scrollbar-width:none; }
+  .cats::-webkit-scrollbar { display:none; }
+  .cat { font-size:13px; font-weight:500; color:var(--text-dim); white-space:nowrap; padding:6px 12px; border-radius:8px; cursor:pointer; }
+  .cat.on { background:var(--surface-2); color:var(--text); }
+
+  .markets { padding:12px; display:grid; grid-template-columns:1fr; gap:12px; }
+  @media (min-width:600px){ .markets { grid-template-columns:1fr 1fr; } }
+  @media (min-width:920px){ .markets { grid-template-columns:1fr 1fr 1fr; } }
+  @media (min-width:1100px){ .markets { grid-template-columns:1fr 1fr 1fr 1fr; } }
+
+  .market { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; }
+  .market:hover { border-color:#38414d; }
+  .m-head { display:flex; gap:11px; align-items:flex-start; margin-bottom:13px; cursor:pointer; }
+  .m-thumb { width:38px; height:38px; border-radius:8px; background:var(--surface-2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .m-title { font-size:13.5px; font-weight:600; line-height:1.35; }
+  .m-meta { font-size:11px; color:var(--text-dim); margin-top:4px; }
+  .multi-row { display:flex; align-items:center; gap:9px; padding:6px 0; cursor:pointer; border-radius:6px; }
+  .multi-row.selected { background:var(--pm-blue-soft); margin:0 -8px; padding:6px 8px; }
+  .multi-name { font-size:12.5px; font-weight:500; width:64px; flex-shrink:0; }
+  .multi-track { flex:1; height:6px; background:var(--surface-2); border-radius:999px; overflow:hidden; }
+  .multi-fill { height:100%; background:var(--pm-blue); border-radius:999px; transition:width .5s; }
+  .multi-pct { font-size:12.5px; font-weight:700; width:38px; text-align:right; font-variant-numeric:tabular-nums; }
+  .multi-mult { font-size:11px; color:var(--text-dim); width:36px; text-align:right; }
+  .m-foot { display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-dimmer); margin-top:auto; padding-top:11px; border-top:1px solid var(--line); }
+  .stake { display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+  .stake.show { display:block; }
+  .stake-info { font-size:12px; color:var(--text-dim); margin-bottom:9px; }
+  .stake-info b { color:var(--pm-blue); }
+  .stake-ctrl { display:flex; gap:8px; align-items:center; }
+  .stake-in { flex:1; display:flex; align-items:center; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:9px 12px; }
+  .stake-in input { background:none; border:none; color:var(--text); font-size:15px; font-weight:600; width:100%; outline:none; }
+  .stake-in span { font-size:11px; color:var(--text-dim); }
+  .stake-go { background:var(--pm-blue); color:#fff; border:none; border-radius:9px; padding:10px 18px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .stake-go:hover { filter:brightness(1.08); }
+  .stake-payout { font-size:12px; color:var(--text-dim); margin-top:8px; }
+  .stake-payout b { color:var(--green); }
+  .stake-chips { display:flex; gap:6px; margin-top:9px; }
+  .chip { font-size:11px; color:var(--text-dim); background:var(--surface-2); padding:5px 11px; border-radius:999px; cursor:pointer; }
+  .chip:hover { color:var(--text); }
+
+  .tabbar { position:fixed; bottom:0; left:0; right:0; background:var(--bg); border-top:1px solid var(--line); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:30; }
+  @media (min-width:768px){ .tabbar { display:none; } }
+  .tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-dimmer); font-size:10px; cursor:pointer; }
+  .tab.on { color:var(--text); }
+  .tab.on .tab-ic { color:var(--pm-blue); }
+  .tab-ic { font-size:18px; }
+
+  .section-pad { max-width:680px; margin:0 auto; }
+  .lb-head { padding:18px 16px 8px; font-size:18px; font-weight:700; }
+  .lb-toggle { display:flex; gap:6px; padding:0 16px 12px; }
+  .lb-t { font-size:13px; color:var(--text-dim); padding:7px 15px; border-radius:8px; background:var(--surface); cursor:pointer; }
+  .lb-t.on { background:var(--pm-blue); color:#fff; }
+  .lb-list { padding:0 12px; }
+  .lb-row { display:flex; align-items:center; gap:12px; padding:13px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px; margin-bottom:8px; }
+  .lb-rank { font-size:16px; font-weight:700; width:22px; color:var(--text-dim); }
+  .lb-row:nth-child(1) .lb-rank { color:var(--pm-blue); }
+  .lb-av { width:32px; height:32px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .lb-info { flex:1; }
+  .lb-name { font-size:13px; font-weight:600; }
+  .lb-sub { font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .lb-val { font-size:14px; font-weight:700; color:var(--pm-blue); font-variant-numeric:tabular-nums; }
+
+  .page { display:none; }
+  .page.on { display:block; }
+  .empty { text-align:center; color:var(--text-dimmer); font-size:13px; padding:60px 20px; }
+  .me-card { margin:16px 12px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; max-width:480px; }
+  @media (min-width:768px){ .me-card { margin:24px auto; } }
+  .me-bal { font-size:32px; font-weight:700; }
+  .me-bal-lbl { font-size:12px; color:var(--text-dim); margin-bottom:16px; }
+  .me-stats { display:flex; gap:10px; }
+  .me-stat { flex:1; background:var(--surface-2); border-radius:9px; padding:13px; text-align:center; }
+  .me-stat-n { font-size:20px; font-weight:700; color:var(--pm-blue); }
+  .me-stat-l { font-size:11px; color:var(--text-dim); margin-top:3px; }
+
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--line); color:var(--text); font-size:13px; padding:11px 18px; border-radius:10px; z-index:60; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap; }
+  @media (min-width:768px){ .toast { bottom:40px; } }
+  .toast.show { opacity:1; }
+  .banner { font-size:11px; color:var(--text-dimmer); text-align:center; padding:10px; border-top:1px solid var(--line); }
+  .banner b { color:var(--pm-blue); cursor:pointer; }
+
+  /* 登录模态 */
+  .modal-mask { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--line); border-radius:16px; width:100%; max-width:360px; padding:28px 24px; }
+  .modal-logo { display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom:6px; font-size:18px; font-weight:700; }
+  .modal-sub { text-align:center; font-size:12px; color:var(--text-dim); margin-bottom:22px; }
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .field-in { display:flex; align-items:center; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:11px 13px; }
+  .field-in input { background:none; border:none; outline:none; color:var(--text); font-size:14px; width:100%; }
+  .field-code { display:flex; gap:8px; }
+  .code-btn { background:var(--surface-2); color:var(--pm-blue); border:none; border-radius:9px; padding:0 14px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .code-btn:disabled { color:var(--text-dimmer); cursor:default; }
+  .modal-go { width:100%; background:var(--pm-blue); color:#fff; border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; }
+  .modal-go:hover { filter:brightness(1.08); }
+  .modal-note { font-size:11px; color:var(--text-dimmer); text-align:center; margin-top:14px; line-height:1.6; }
+  .modal-x { position:absolute; top:18px; right:20px; font-size:20px; color:var(--text-dim); cursor:pointer; background:none; border:none; }
+  .modal-wrap { position:relative; }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <div class="nav-inner">
+      <div class="logo" onclick="switchTab('markets')"><span class="logo-mark">先</span>先知局</div>
+      <div class="search" id="searchBox"><span class="search-ic">🔍</span><input placeholder="搜索比赛、球队…" oninput="filterMarkets(this.value)"></div>
+      <div class="nav-menu" id="navMenu">
+        <div class="nav-item on" data-tab="markets" onclick="switchTab('markets')">市场</div>
+        <div class="nav-item" data-tab="leaderboard" onclick="switchTab('leaderboard')">排行榜</div>
+        <div class="nav-item" data-tab="achievements" onclick="switchTab('achievements')">成就</div>
+        <div class="nav-item" data-tab="me" onclick="switchTab('me')">我的</div>
+      </div>
+      <div class="nav-right">
+        <div class="balance" id="balanceBox" style="display:none"><span class="balance-num" id="balNum">—</span><span class="balance-lbl">点</span></div>
+        <button class="login-btn" id="loginBtn" onclick="openLogin()">登录 / 注册</button>
+        <div class="avatar-btn" id="avatarBtn" onclick="switchTab('me')">🦉</div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="page on" id="page-markets">
+      <div class="hero" id="hero">
+        <div class="hero-l"><h2>2026 世界杯 · 全民预测</h2><p>预测越准排名越高，赢取专属称号</p></div>
+        <div class="hero-stat">
+          <div><div class="n" id="heroMarkets">6</div><div class="l">进行中市场</div></div>
+          <div><div class="n" id="heroPredictors">64.5k</div><div class="l">累计预测人次</div></div>
+        </div>
+      </div>
+      <div class="cats" id="cats">
+        <div class="cat on">最热</div><div class="cat">最新</div><div class="cat">小组赛</div><div class="cat">淘汰赛</div><div class="cat">夺冠</div>
+      </div>
+      <div class="markets" id="marketList"></div>
+    </div>
+    <div class="page" id="page-leaderboard">
+      <div class="section-pad">
+        <div class="lb-head">排行榜</div>
+        <div class="lb-toggle">
+          <div class="lb-t on" onclick="loadLeaderboard('streak', this)">连胜榜</div>
+          <div class="lb-t" onclick="loadLeaderboard('points', this)">积分榜</div>
+        </div>
+        <div class="lb-list" id="lbList"></div>
+      </div>
+    </div>
+    <div class="page" id="page-me">
+      <div class="me-card">
+        <div class="me-bal" id="meBal">—</div>
+        <div class="me-bal-lbl">我的积分</div>
+        <div class="me-stats">
+          <div class="me-stat"><div class="me-stat-n" id="meStreak">0</div><div class="me-stat-l">当前连胜</div></div>
+          <div class="me-stat"><div class="me-stat-n" id="meBest">0</div><div class="me-stat-l">最高连胜</div></div>
+          <div class="me-stat"><div class="me-stat-n" id="meAch">0</div><div class="me-stat-l">成就</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="page" id="page-achievements">
+      <div class="empty">成就系统开发中<br>命中5/10/20连胜可解锁专属称号</div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab on" data-tab="markets" onclick="switchTab('markets')"><span class="tab-ic">📊</span><span>市场</span></div>
+    <div class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')"><span class="tab-ic">🏆</span><span>排行榜</span></div>
+    <div class="tab" data-tab="achievements" onclick="switchTab('achievements')"><span class="tab-ic">🎖️</span><span>成就</span></div>
+    <div class="tab" data-tab="me" onclick="switchTab('me')"><span class="tab-ic">👤</span><span>我的</span></div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="banner">数据来源：<b id="modeLabel" onclick="toggleMode()">演示模式（点击切换真实接口）</b></div>
+
+  <div class="modal-mask" id="loginModal">
+    <div class="modal modal-wrap">
+      <button class="modal-x" onclick="closeLogin()">×</button>
+      <div class="modal-logo"><span class="logo-mark">先</span>先知局</div>
+      <div class="modal-sub" id="modalSub">登录账号 · 开始你的预测</div>
+      <div class="field" id="nicknameField" style="display:none">
+        <label>昵称（选填）</label>
+        <div class="field-in"><input id="nicknameInput" type="text" maxlength="12" placeholder="给自己起个名"></div>
+      </div>
+      <div class="field">
+        <label>邮箱</label>
+        <div class="field-in"><input id="emailInput" type="email" placeholder="请输入邮箱"></div>
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <div class="field-in"><input id="passwordInput" type="password" placeholder="至少6位密码"></div>
+      </div>
+      <button class="modal-go" id="modalGoBtn" onclick="doAuth()">登录</button>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-dim)">
+        <span id="switchHint">还没有账号？</span>
+        <b style="color:var(--pm-blue);cursor:pointer" onclick="toggleAuthMode()" id="switchBtn">注册</b>
+      </div>
+      <div class="modal-note">本平台积分仅用于娱乐排名，不可兑换、不可提现</div>
+    </div>
+  </div>
+<script>
+const CONFIG = { API_BASE:'https://worldcup-predict.your-subdomain.workers.dev', USER_ID:1 };
+let DEMO_MODE = true;
+let LOGGED_IN = false;
+
+const DEMO = {
+  me:{ pointsBalance:2480, currentStreak:5, bestStreak:12, achievements:[{name:'五连胜'}] },
+  markets:[
+    {id:1,stage:'小组赛 F组',homeTeam:'葡萄牙',awayTeam:'西班牙',totalPredictors:8402,thumb:'⚽',tiers:[
+      {predictionTypeCode:'match_result',outcomeKey:'home_win',outcomeLabel:'葡萄牙胜',multiplier:2.1,stakeCap:10000,sharePct:42},
+      {predictionTypeCode:'match_result',outcomeKey:'draw',outcomeLabel:'平局',multiplier:3.4,stakeCap:10000,sharePct:21},
+      {predictionTypeCode:'match_result',outcomeKey:'away_win',outcomeLabel:'西班牙胜',multiplier:2.6,stakeCap:10000,sharePct:37}]},
+    {id:2,stage:'小组赛 H组',homeTeam:'韩国',awayTeam:'摩洛哥',totalPredictors:3917,thumb:'⚽',tiers:[
+      {predictionTypeCode:'match_result',outcomeKey:'home_win',outcomeLabel:'韩国胜',multiplier:2.4,stakeCap:10000,sharePct:35},
+      {predictionTypeCode:'match_result',outcomeKey:'draw',outcomeLabel:'平局',multiplier:3.1,stakeCap:10000,sharePct:28},
+      {predictionTypeCode:'match_result',outcomeKey:'away_win',outcomeLabel:'摩洛哥胜',multiplier:2.3,stakeCap:10000,sharePct:37}]},
+    {id:3,stage:'夺冠预测',title:'谁能夺得本届世界杯冠军？',homeTeam:'',awayTeam:'',totalPredictors:21887,thumb:'🏆',tiers:[
+      {predictionTypeCode:'champion',outcomeKey:'arg',outcomeLabel:'阿根廷',multiplier:4.3,stakeCap:10000,sharePct:23},
+      {predictionTypeCode:'champion',outcomeKey:'fra',outcomeLabel:'法国',multiplier:5.2,stakeCap:10000,sharePct:19},
+      {predictionTypeCode:'champion',outcomeKey:'bra',outcomeLabel:'巴西',multiplier:6.1,stakeCap:10000,sharePct:16}]},
+    {id:4,stage:'小组赛 C组',homeTeam:'英格兰',awayTeam:'德国',totalPredictors:15203,thumb:'⚽',tiers:[
+      {predictionTypeCode:'match_result',outcomeKey:'home_win',outcomeLabel:'英格兰胜',multiplier:2.5,stakeCap:10000,sharePct:33},
+      {predictionTypeCode:'match_result',outcomeKey:'draw',outcomeLabel:'平局',multiplier:3.2,stakeCap:10000,sharePct:27},
+      {predictionTypeCode:'match_result',outcomeKey:'away_win',outcomeLabel:'德国胜',multiplier:2.2,stakeCap:10000,sharePct:40}]},
+    {id:5,stage:'小组赛 A组',homeTeam:'巴西',awayTeam:'克罗地亚',totalPredictors:9981,thumb:'⚽',tiers:[
+      {predictionTypeCode:'match_result',outcomeKey:'home_win',outcomeLabel:'巴西胜',multiplier:1.7,stakeCap:10000,sharePct:58},
+      {predictionTypeCode:'match_result',outcomeKey:'draw',outcomeLabel:'平局',multiplier:3.6,stakeCap:10000,sharePct:22},
+      {predictionTypeCode:'match_result',outcomeKey:'away_win',outcomeLabel:'克罗地亚胜',multiplier:4.8,stakeCap:10000,sharePct:20}]},
+    {id:6,stage:'小组赛 F组',title:'葡萄牙 vs 西班牙，双方都会进球吗？',homeTeam:'葡萄牙',awayTeam:'西班牙',totalPredictors:5113,thumb:'🥅',tiers:[
+      {predictionTypeCode:'both_teams_score',outcomeKey:'yes',outcomeLabel:'双方都进球',multiplier:1.6,stakeCap:10000,sharePct:64},
+      {predictionTypeCode:'both_teams_score',outcomeKey:'no',outcomeLabel:'非双方都进',multiplier:2.3,stakeCap:10000,sharePct:36}]},
+    {id:7,stage:'淘汰赛 1/8决赛',homeTeam:'荷兰',awayTeam:'美国',totalPredictors:7234,thumb:'⚽',tiers:[
+      {predictionTypeCode:'match_result',outcomeKey:'home_win',outcomeLabel:'荷兰胜',multiplier:1.9,stakeCap:10000,sharePct:51},
+      {predictionTypeCode:'match_result',outcomeKey:'draw',outcomeLabel:'平局',multiplier:3.5,stakeCap:10000,sharePct:24},
+      {predictionTypeCode:'match_result',outcomeKey:'away_win',outcomeLabel:'美国胜',multiplier:3.8,stakeCap:10000,sharePct:25}]},
+    {id:8,stage:'小组赛 G组',homeTeam:'比利时',awayTeam:'日本',totalPredictors:6120,thumb:'⚽',tiers:[
+      {predictionTypeCode:'match_result',outcomeKey:'home_win',outcomeLabel:'比利时胜',multiplier:2.0,stakeCap:10000,sharePct:46},
+      {predictionTypeCode:'match_result',outcomeKey:'draw',outcomeLabel:'平局',multiplier:3.3,stakeCap:10000,sharePct:27},
+      {predictionTypeCode:'match_result',outcomeKey:'away_win',outcomeLabel:'日本胜',multiplier:3.1,stakeCap:10000,sharePct:27}]},
+    {id:9,stage:'金靴预测',title:'谁是本届世界杯金靴（进球最多）？',homeTeam:'',awayTeam:'',totalPredictors:11302,thumb:'👟',tiers:[
+      {predictionTypeCode:'top_scorer',outcomeKey:'mbappe',outcomeLabel:'姆巴佩',multiplier:5.5,stakeCap:10000,sharePct:28},
+      {predictionTypeCode:'top_scorer',outcomeKey:'haaland',outcomeLabel:'哈兰德',multiplier:6.0,stakeCap:10000,sharePct:24},
+      {predictionTypeCode:'top_scorer',outcomeKey:'kane',outcomeLabel:'凯恩',multiplier:7.2,stakeCap:10000,sharePct:18}]},
+  ],
+  leaderboard:{
+    streak:[
+      {nickname:'老王看球',current_streak:12,best_streak:14,avatar:'🦉'},
+      {nickname:'球场判官',current_streak:9,best_streak:9,avatar:'🐯'},
+      {nickname:'阿根廷之友',current_streak:7,best_streak:11,avatar:'🦊'},
+      {nickname:'冷门预言家',current_streak:6,best_streak:8,avatar:'🐺'},
+      {nickname:'看球的猫',current_streak:5,best_streak:13,avatar:'🐱'}],
+    points:[
+      {nickname:'梅西门徒',points_balance:48200,avatar:'🐐'},
+      {nickname:'老王看球',points_balance:39100,avatar:'🦉'},
+      {nickname:'冷门收割机',points_balance:31500,avatar:'🦅'},
+      {nickname:'稳健派',points_balance:28800,avatar:'🐢'},
+      {nickname:'欧洲杯老兵',points_balance:24100,avatar:'🦁'}],
+  },
+};
+const AVATARS = ['🦉','🐯','🦊','🐺','🦁','🐻','🦅','🐢','🐬','🦈'];
+
+async function api(path, opts){ if(DEMO_MODE) throw new Error('DEMO'); const r=await fetch(CONFIG.API_BASE+path,opts); return r.json(); }
+
+async function loadMarkets(){
+  let markets;
+  if(DEMO_MODE){
+    markets=DEMO.markets;
+  } else {
+    try{
+      // 真实模式：同时拉单场市场和赛事级市场（夺冠/金靴），合并展示
+      const [single, events] = await Promise.all([
+        api('/api/markets').catch(()=>({markets:[]})),
+        api('/api/event-markets').catch(()=>({markets:[]})),
+      ]);
+      const singleMarkets = (single.markets||[]).map(m=>({...m, isEvent:false}));
+      // 赛事市场转换成统一的市场结构，tiers 用 options
+      const eventMarkets = (events.markets||[]).map(em=>({
+        id: 'ev_'+em.id,        // 加前缀区分，避免和单场id冲突
+        rawId: em.id,
+        isEvent: true,
+        marketCode: em.marketCode,
+        title: em.title,
+        stage: em.marketCode==='champion'?'夺冠预测':'金靴预测',
+        homeTeam:'', awayTeam:'',
+        thumb: em.marketCode==='champion'?'🏆':'👟',
+        totalPredictors: em.totalPredictors,
+        tiers: em.options.map(o=>({
+          predictionTypeCode: em.marketCode,
+          outcomeKey: o.outcomeKey, outcomeLabel: o.outcomeLabel,
+          multiplier: o.multiplier, stakeCap: o.stakeCap, sharePct: o.sharePct,
+        })),
+      }));
+      markets = [...singleMarkets, ...eventMarkets];
+    }catch(e){ markets=DEMO.markets; }
+  }
+  window._allMarkets=markets;
+  renderMarkets(markets);
+  const tp=markets.reduce((s,m)=>s+m.totalPredictors,0);
+  document.getElementById('heroMarkets').textContent=markets.length;
+  document.getElementById('heroPredictors').textContent=(tp/1000).toFixed(1)+'k';
+}
+function renderMarkets(markets){
+  const el=document.getElementById('marketList');
+  el.innerHTML=markets.map((m)=>{
+    const mid=JSON.stringify(m.id); // 数字或字符串都安全传参
+    const rows=m.tiers.map((t,ti)=>`
+      <div class="multi-row" id="row-${m.id}-${ti}" onclick="selectOutcome(${mid}, ${ti})">
+        <span class="multi-name">${t.outcomeLabel}</span>
+        <span class="multi-track"><span class="multi-fill" style="width:${t.sharePct}%"></span></span>
+        <span class="multi-pct">${t.sharePct}%</span>
+        <span class="multi-mult">${t.multiplier}×</span>
+      </div>`).join('');
+    const code=m.tiers[0]&&m.tiers[0].predictionTypeCode;
+    const title=m.title||(code==='both_teams_score'?`${m.homeTeam} vs ${m.awayTeam}，双方都会进球吗？`:`${m.homeTeam} vs ${m.awayTeam}，本场谁胜？`);
+    const metaLeft=m.isEvent?m.stage:`${m.stage}`;
+    return `<div class="market" data-market="${m.id}" data-search="${m.homeTeam||''}${m.awayTeam||''}${m.stage}${m.title||''}">
+      <div class="m-head"><div class="m-thumb">${m.thumb||'⚽'}</div>
+        <div><div class="m-title">${title}</div><div class="m-meta">${metaLeft} · ${m.totalPredictors.toLocaleString()} 人预测</div></div></div>
+      ${rows}
+      <div class="stake" id="stake-${m.id}">
+        <div class="stake-info">预测 <b id="sel-label-${m.id}">—</b>，倍率 <b id="sel-mult-${m.id}">—</b></div>
+        <div class="stake-ctrl"><div class="stake-in"><input type="number" id="stake-input-${m.id}" placeholder="输入点数" oninput="calcPayout(${mid})"><span>点</span></div>
+          <button class="stake-go" onclick="submitPredict(${mid})">确认预测</button></div>
+        <div class="stake-chips"><span class="chip" onclick="setStake(${mid},100)">100</span><span class="chip" onclick="setStake(${mid},500)">500</span><span class="chip" onclick="setStake(${mid},1000)">1000</span></div>
+        <div class="stake-payout" id="payout-${m.id}"></div>
+      </div>
+      <div class="m-foot"><span>🔒 倍率开赛前已锁定</span><span>命中按倍率发放</span></div>
+    </div>`;
+  }).join('');
+  window._markets=markets;
+}
+function filterMarkets(q){
+  if(!window._allMarkets) return;
+  const f=q?window._allMarkets.filter(m=>((m.homeTeam||'')+(m.awayTeam||'')+m.stage+(m.title||'')).includes(q)):window._allMarkets;
+  renderMarkets(f);
+}
+let _selection={};
+function selectOutcome(marketId,tierIndex){
+  if(!LOGGED_IN){ openLogin(); return; }
+  _selection[marketId]={tierIndex};
+  const tier=window._markets.find(m=>m.id===marketId).tiers[tierIndex];
+  window._markets.find(m=>m.id===marketId).tiers.forEach((_,i)=>{document.getElementById(`row-${marketId}-${i}`).classList.toggle('selected',i===tierIndex);});
+  document.getElementById(`stake-${marketId}`).classList.add('show');
+  document.getElementById(`sel-label-${marketId}`).textContent=tier.outcomeLabel;
+  document.getElementById(`sel-mult-${marketId}`).textContent=tier.multiplier+'×';
+  calcPayout(marketId);
+}
+function setStake(id,v){ document.getElementById(`stake-input-${id}`).value=v; calcPayout(id); }
+function calcPayout(id){
+  const sel=_selection[id]; if(!sel) return;
+  const tier=window._markets.find(m=>m.id===id).tiers[sel.tierIndex];
+  const stake=parseInt(document.getElementById(`stake-input-${id}`).value||'0',10);
+  document.getElementById(`payout-${id}`).innerHTML=stake>0?`命中可得 <b>${Math.round(stake*tier.multiplier).toLocaleString()}</b> 点`:'';
+}
+async function submitPredict(id){
+  const sel=_selection[id]; if(!sel) return showToast('请先选择预测选项');
+  const market=window._markets.find(m=>m.id===id);
+  const tier=market.tiers[sel.tierIndex];
+  const stake=parseInt(document.getElementById(`stake-input-${id}`).value||'0',10);
+  if(stake<=0) return showToast('请输入预测点数');
+  if(stake>tier.stakeCap) return showToast(`单次最多预测 ${tier.stakeCap.toLocaleString()} 点`);
+  if(DEMO_MODE){ showToast(`已预测「${tier.outcomeLabel}」${stake} 点（演示）`); document.getElementById(`stake-${id}`).classList.remove('show'); return; }
+  try{
+    let data;
+    if(market.isEvent){
+      // 赛事级市场（夺冠/金靴）走 event-predict
+      data=await api('/api/event-predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:CONFIG.USER_ID,marketId:market.rawId,outcomeKey:tier.outcomeKey,pointsStaked:stake})});
+    } else {
+      data=await api('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:CONFIG.USER_ID,matchId:id,predictionTypeCode:tier.predictionTypeCode,outcomeKey:tier.outcomeKey,pointsStaked:stake})});
+    }
+    if(data.success){ showToast(`预测成功：${tier.outcomeLabel} ${stake} 点`); document.getElementById(`stake-${id}`).classList.remove('show'); loadMe(); }
+    else showToast(data.error||'预测失败');
+  }catch(e){ showToast('网络错误，请重试'); }
+}
+async function loadMe(){
+  let me;
+  try{ me=await api(`/api/me?userId=${CONFIG.USER_ID}`); }catch(e){ me=DEMO.me; }
+  document.getElementById('balNum').textContent=me.pointsBalance.toLocaleString();
+  document.getElementById('meBal').textContent=me.pointsBalance.toLocaleString();
+  document.getElementById('meStreak').textContent=me.currentStreak;
+  document.getElementById('meBest').textContent=me.bestStreak;
+  document.getElementById('meAch').textContent=(me.achievements||[]).length;
+}
+async function loadLeaderboard(type,btn){
+  if(btn) document.querySelectorAll('.lb-t').forEach(b=>b.classList.toggle('on',b===btn));
+  let rows;
+  try{ rows=(await api(`/api/leaderboard?type=${type}`)).rows; }catch(e){ rows=DEMO.leaderboard[type]; }
+  document.getElementById('lbList').innerHTML=rows.map((r,i)=>{
+    const av=r.avatar||AVATARS[i%AVATARS.length];
+    const main=type==='streak'?`<div class="lb-val">🔥 ${r.current_streak}</div>`:`<div class="lb-val">${(r.points_balance||0).toLocaleString()}</div>`;
+    const sub=type==='streak'?`最高 ${r.best_streak} 连胜`:'当前积分';
+    return `<div class="lb-row"><span class="lb-rank">${i+1}</span><div class="lb-av">${av}</div><div class="lb-info"><div class="lb-name">${r.nickname||'匿名先知'}</div><div class="lb-sub">${sub}</div></div>${main}</div>`;
+  }).join('');
+}
+function switchTab(name){
+  if((name==='me')&&!LOGGED_IN){ openLogin(); return; }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('page-'+name).classList.add('on');
+  document.querySelectorAll('.tab, .nav-item').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
+  if(name==='leaderboard') loadLeaderboard('streak',document.querySelector('.lb-t'));
+  if(name==='me') loadMe();
+}
+let toastTimer;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
+function toggleMode(){ DEMO_MODE=!DEMO_MODE; document.getElementById('modeLabel').textContent=DEMO_MODE?'演示模式（点击切换真实接口）':'真实接口模式（点击切回演示）'; loadMarkets(); if(LOGGED_IN) loadMe(); else if(!DEMO_MODE) tryRestoreSession(); showToast(DEMO_MODE?'已切到演示数据':'已切到真实接口'); }
+
+/* 登录 */
+function openLogin(){ document.getElementById('loginModal').classList.add('show'); }
+function closeLogin(){ document.getElementById('loginModal').classList.remove('show'); }
+
+// token 存取（真实浏览器用localStorage；预览环境不支持则降级为内存变量）
+let _memToken = null;
+function saveToken(t){ try{ localStorage.setItem('xzj_token', t); }catch(e){ _memToken = t; } }
+function getToken(){ try{ return localStorage.getItem('xzj_token'); }catch(e){ return _memToken; } }
+function clearToken(){ try{ localStorage.removeItem('xzj_token'); }catch(e){ _memToken = null; } }
+
+let codeTimer;
+let AUTH_MODE = 'login'; // 'login' | 'register'
+
+function toggleAuthMode(){
+  AUTH_MODE = AUTH_MODE === 'login' ? 'register' : 'login';
+  const isReg = AUTH_MODE === 'register';
+  document.getElementById('modalSub').textContent = isReg ? '注册账号 · 加入预测社区' : '登录账号 · 开始你的预测';
+  document.getElementById('modalGoBtn').textContent = isReg ? '注册' : '登录';
+  document.getElementById('switchHint').textContent = isReg ? '已有账号？' : '还没有账号？';
+  document.getElementById('switchBtn').textContent = isReg ? '去登录' : '注册';
+  document.getElementById('nicknameField').style.display = isReg ? 'block' : 'none';
+}
+
+async function doAuth(){
+  const email=document.getElementById('emailInput').value.trim();
+  const password=document.getElementById('passwordInput').value;
+  const nickname=document.getElementById('nicknameInput').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showToast('请输入正确的邮箱');
+  if(password.length<6) return showToast('密码至少6位');
+
+  if(DEMO_MODE){ CONFIG.USER_ID=1; onLoginSuccess(nickname||'先知'+email.split('@')[0].slice(0,4)); return; }
+
+  const path = AUTH_MODE === 'register' ? '/api/register' : '/api/login';
+  const body = AUTH_MODE === 'register' ? { email, password, nickname } : { email, password };
+  try{
+    const data=await api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(data.success){
+      CONFIG.USER_ID=data.userId;
+      saveToken(data.token);
+      onLoginSuccess(data.nickname);
+    } else showToast(data.error||(AUTH_MODE==='register'?'注册失败':'登录失败'));
+  }catch(e){ showToast('网络错误，请重试'); }
+}
+function onLoginSuccess(nickname){
+  LOGGED_IN=true;
+  closeLogin();
+  document.getElementById('loginBtn').style.display='none';
+  document.getElementById('balanceBox').style.display='flex';
+  document.getElementById('avatarBtn').style.display='flex';
+  if(nickname) showToast('欢迎，'+nickname);
+  else showToast('登录成功');
+  loadMe();
+}
+function logout(){ clearToken(); location.reload(); }
+
+// 页面加载时尝试用已保存的token恢复登录态
+async function tryRestoreSession(){
+  const token=getToken();
+  if(!token || DEMO_MODE) return;
+  try{
+    const data=await api('/api/session?token='+encodeURIComponent(token));
+    if(data.success){ CONFIG.USER_ID=data.userId; onLoginSuccess(data.nickname); }
+    else clearToken();
+  }catch(e){ /* token失效，静默忽略 */ }
+}
+
+// 给需要登录的接口请求自动带上token
+function authHeaders(){
+  const token=getToken();
+  return token ? { 'Authorization':'Bearer '+token } : {};
+}
+
+function applyResponsive(){
+  const wide=window.innerWidth>=768;
+  document.getElementById('navMenu').style.display=wide?'flex':'none';
+  document.getElementById('searchBox').style.display=wide?'flex':'none';
+  document.getElementById('hero').style.display=wide?'flex':'none';
+}
+window.addEventListener('resize',applyResponsive);
+applyResponsive();
+loadMarkets();
+tryRestoreSession();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+name = "worldcup-predict"
+main = "worker/index.js"
+compatibility_date = "2026-06-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "worldcup-predict-db"
+database_id = "替换成你创建D1后拿到的真实database_id"
+
+[triggers]
+# 只拉比赛结果、不要实时，所以低频即可：每2小时一次
+# 世界杯比赛日如果想更及时，可临时改成 "*/30 * * * *"（每30分钟）
+crons = ["0 */2 * * *"]
+
+# 密钥不要写在这里，用 wrangler secret put 设置：
+#   wrangler secret put SPORTS_API_KEY
+#   wrangler secret put ADMIN_TOKEN

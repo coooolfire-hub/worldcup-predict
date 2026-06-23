@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>先知局 · 世界杯预测</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1B14;
+    --surface: #16261C;
+    --surface-raised: #1C2F22;
+    --line: #28392F;
+    --text: #F2EFE6;
+    --text-dim: #8FA396;
+    --gold: #E3A857;
+    --gold-dim: #6B5530;
+    --live-red: #E2543A;
+    --home: #4F9D69;
+    --draw: #C9A24B;
+    --away: #B85C5C;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    padding-bottom: 90px;
+  }
+
+  /* ---------- 顶部栏 ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 18px 14px;
+    position: sticky;
+    top: 0;
+    background: linear-gradient(180deg, var(--bg) 80%, transparent);
+    z-index: 10;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .brand-mark {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: 0.5px;
+    color: var(--text);
+  }
+
+  .brand-mark span { color: var(--gold); }
+
+  .balance {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 14px 6px 10px;
+  }
+
+  .balance-dot { font-size: 14px; }
+
+  .balance-num {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--gold);
+  }
+
+  .balance-label {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ---------- 实时比分跑马灯 ---------- */
+  .ticker-section { padding: 4px 18px 18px; }
+
+  .ticker-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .live-pulse {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--live-red);
+    box-shadow: 0 0 0 0 rgba(226,84,58,0.6);
+    animation: pulse 1.8s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(226,84,58,0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(226,84,58,0); }
+    100% { box-shadow: 0 0 0 0 rgba(226,84,58,0); }
+  }
+
+  .ticker-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .ticker-scroll::-webkit-scrollbar { display: none; }
+
+  .ticker-card {
+    flex: 0 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 132px;
+  }
+
+  .ticker-teams {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .ticker-score {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 19px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .ticker-minute {
+    font-size: 10px;
+    color: var(--live-red);
+    margin-top: 4px;
+  }
+
+  /* ---------- 区块标题 ---------- */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 18px;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .section-more {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* ---------- 比赛预测卡片 ---------- */
+  .matches { padding: 0 18px; display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+
+  .match-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .match-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .match-stage {
+    background: rgba(227,168,87,0.12);
+    color: var(--gold);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+
+  .match-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 90px;
+  }
+
+  .team-flag {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--surface-raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .team-name {
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .vs {
+    font-family: 'Oswald', sans-serif;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  /* ---------- 社区预测分布条（签名元素） ---------- */
+  .distribution {
+    margin-bottom: 14px;
+  }
+
+  .dist-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .dist-bar {
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    display: flex;
+    background: var(--line);
+  }
+
+  .dist-home { background: var(--home); }
+  .dist-draw { background: var(--draw); }
+  .dist-away { background: var(--away); }
+
+  .dist-segment {
+    height: 100%;
+    transition: width 0.6s ease;
+  }
+
+  /* ---------- 预测选项按钮 ---------- */
+  .predict-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .predict-btn {
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+
+  .predict-btn:hover {
+    border-color: var(--gold-dim);
+  }
+
+  .predict-btn:active { transform: scale(0.97); }
+
+  .predict-btn.selected {
+    border-color: var(--gold);
+    background: rgba(227,168,87,0.08);
+  }
+
+  .predict-outcome {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .predict-multiplier {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--gold);
+  }
+
+  .predict-multiplier::after {
+    content: '×';
+    font-size: 12px;
+    margin-left: 1px;
+    color: var(--gold-dim);
+  }
+
+  /* ---------- 下注输入区 ---------- */
+  .stake-row {
+    display: none;
+    margin-top: 12px;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .match-card.expanded .stake-row { display: flex; }
+
+  .stake-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+
+  .stake-input-wrap input {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+  }
+
+  .stake-unit { font-size: 11px; color: var(--text-dim); }
+
+  .stake-submit {
+    background: var(--gold);
+    color: #1A1407;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .stake-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* ---------- 连胜/排行榜 ---------- */
+  .leaderboard {
+    padding: 0 18px;
+    margin-bottom: 24px;
+  }
+
+  .lb-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .lb-row:last-child { border-bottom: none; }
+
+  .lb-rank {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    width: 22px;
+    color: var(--text-dim);
+  }
+
+  .lb-row:nth-child(1) .lb-rank { color: var(--gold); }
+
+  .lb-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface-raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .lb-info { flex: 1; }
+
+  .lb-name { font-size: 13px; font-weight: 500; }
+
+  .lb-streak {
+    font-size: 11px;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .lb-badge {
+    font-size: 10px;
+    background: rgba(227,168,87,0.12);
+    color: var(--gold);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+
+  /* ---------- 底部导航 ---------- */
+  .tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    display: flex;
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  .tab.active { color: var(--gold); }
+  .tab-icon { font-size: 18px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶部栏 -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark">先知<span>局</span></span>
+    </div>
+    <div class="balance">
+      <span class="balance-dot">🔥</span>
+      <span class="balance-num">2,480</span>
+      <span class="balance-label">点</span>
+    </div>
+  </div>
+
+  <!-- 实时比分跑马灯 -->
+  <div class="ticker-section">
+    <div class="ticker-label"><span class="live-pulse"></span> 4场比赛正在进行</div>
+    <div class="ticker-scroll">
+      <div class="ticker-card">
+        <div class="ticker-teams"><span>巴西</span><span>阿根廷</span></div>
+        <div class="ticker-score"><span>2</span><span>1</span></div>
+        <div class="ticker-minute">76'</div>
+      </div>
+      <div class="ticker-card">
+        <div class="ticker-teams"><span>法国</span><span>英格兰</span></div>
+        <div class="ticker-score"><span>0</span><span>0</span></div>
+        <div class="ticker-minute">52'</div>
+      </div>
+      <div class="ticker-card">
+        <div class="ticker-teams"><span>德国</span><span>日本</span></div>
+        <div class="ticker-score"><span>1</span><span>1</span></div>
+        <div class="ticker-minute">63'</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 即将开始的比赛 -->
+  <div class="section-head">
+    <span class="section-title">今晚预测</span>
+    <span class="section-more">全部赛程 ›</span>
+  </div>
+
+  <div class="matches">
+
+    <!-- 比赛卡片 1 -->
+    <div class="match-card" id="card1">
+      <div class="match-meta">
+        <span class="match-stage">小组赛 · F组</span>
+        <span>今晚 23:00 开赛</span>
+      </div>
+      <div class="match-teams">
+        <div class="team">
+          <div class="team-flag">🇵🇹</div>
+          <div class="team-name">葡萄牙</div>
+        </div>
+        <span class="vs">VS</span>
+        <div class="team">
+          <div class="team-flag">🇪🇸</div>
+          <div class="team-name">西班牙</div>
+        </div>
+      </div>
+
+      <div class="distribution">
+        <div class="dist-label"><span>社区预测分布</span><span>共 8,402 人预测</span></div>
+        <div class="dist-bar">
+          <div class="dist-segment dist-home" style="width:42%"></div>
+          <div class="dist-segment dist-draw" style="width:21%"></div>
+          <div class="dist-segment dist-away" style="width:37%"></div>
+        </div>
+      </div>
+
+      <div class="predict-options">
+        <div class="predict-btn" onclick="selectOption(this, 'card1')">
+          <div class="predict-outcome">葡萄牙胜</div>
+          <div class="predict-multiplier">2.1</div>
+        </div>
+        <div class="predict-btn" onclick="selectOption(this, 'card1')">
+          <div class="predict-outcome">平局</div>
+          <div class="predict-multiplier">3.4</div>
+        </div>
+        <div class="predict-btn" onclick="selectOption(this, 'card1')">
+          <div class="predict-outcome">西班牙胜</div>
+          <div class="predict-multiplier">2.6</div>
+        </div>
+      </div>
+
+      <div class="stake-row">
+        <div class="stake-input-wrap">
+          <input type="number" placeholder="输入预测点数" value="500">
+          <span class="stake-unit">点</span>
+        </div>
+        <button class="stake-submit">确认预测</button>
+      </div>
+    </div>
+
+    <!-- 比赛卡片 2 -->
+    <div class="match-card" id="card2">
+      <div class="match-meta">
+        <span class="match-stage">小组赛 · H组</span>
+        <span>明晚 03:00 开赛</span>
+      </div>
+      <div class="match-teams">
+        <div class="team">
+          <div class="team-flag">🇰🇷</div>
+          <div class="team-name">韩国</div>
+        </div>
+        <span class="vs">VS</span>
+        <div class="team">
+          <div class="team-flag">🇲🇦</div>
+          <div class="team-name">摩洛哥</div>
+        </div>
+      </div>
+
+      <div class="distribution">
+        <div class="dist-label"><span>社区预测分布</span><span>共 3,917 人预测</span></div>
+        <div class="dist-bar">
+          <div class="dist-segment dist-home" style="width:35%"></div>
+          <div class="dist-segment dist-draw" style="width:28%"></div>
+          <div class="dist-segment dist-away" style="width:37%"></div>
+        </div>
+      </div>
+
+      <div class="predict-options">
+        <div class="predict-btn" onclick="selectOption(this, 'card2')">
+          <div class="predict-outcome">韩国胜</div>
+          <div class="predict-multiplier">2.4</div>
+        </div>
+        <div class="predict-btn" onclick="selectOption(this, 'card2')">
+          <div class="predict-outcome">平局</div>
+          <div class="predict-multiplier">3.1</div>
+        </div>
+        <div class="predict-btn" onclick="selectOption(this, 'card2')">
+          <div class="predict-outcome">摩洛哥胜</div>
+          <div class="predict-multiplier">2.3</div>
+        </div>
+      </div>
+
+      <div class="stake-row">
+        <div class="stake-input-wrap">
+          <input type="number" placeholder="输入预测点数" value="500">
+          <span class="stake-unit">点</span>
+        </div>
+        <button class="stake-submit">确认预测</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 连胜排行榜 -->
+  <div class="section-head">
+    <span class="section-title">连胜榜</span>
+    <span class="section-more">查看全部 ›</span>
+  </div>
+
+  <div class="leaderboard">
+    <div class="lb-card">
+      <div class="lb-row">
+        <span class="lb-rank">1</span>
+        <div class="lb-avatar">🦉</div>
+        <div class="lb-info">
+          <div class="lb-name">老王看球</div>
+          <div class="lb-streak">🔥 12 连胜</div>
+        </div>
+        <span class="lb-badge">世界杯先知</span>
+      </div>
+      <div class="lb-row">
+        <span class="lb-rank">2</span>
+        <div class="lb-avatar">🐯</div>
+        <div class="lb-info">
+          <div class="lb-name">球场判官</div>
+          <div class="lb-streak">🔥 9 连胜</div>
+        </div>
+        <span class="lb-badge">十连胜</span>
+      </div>
+      <div class="lb-row">
+        <span class="lb-rank">3</span>
+        <div class="lb-avatar">🦊</div>
+        <div class="lb-info">
+          <div class="lb-name">阿根廷之友</div>
+          <div class="lb-streak">🔥 7 连胜</div>
+        </div>
+        <span class="lb-badge">五连胜</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="tabbar">
+    <div class="tab active">
+      <span class="tab-icon">⚽</span>
+      <span>赛事</span>
+    </div>
+    <div class="tab">
+      <span class="tab-icon">🏆</span>
+      <span>排行榜</span>
+    </div>
+    <div class="tab">
+      <span class="tab-icon">🎖️</span>
+      <span>成就</span>
+    </div>
+    <div class="tab">
+      <span class="tab-icon">👤</span>
+      <span>我的</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // 仅用于演示交互效果：点击预测选项后展开下注输入区
+  function selectOption(el, cardId) {
+    const card = document.getElementById(cardId);
+    const buttons = card.querySelectorAll('.predict-btn');
+    buttons.forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    card.classList.add('expanded');
+  }
+</script>
+</body>
+</html>

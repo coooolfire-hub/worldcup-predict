@@ -1,0 +1,14 @@
+{
+  "name": "worldcup-predict",
+  "version": "0.1.0",
+  "description": "世界杯预测社区 - 积分制预测平台（Cloudflare Workers + D1）",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute worldcup-predict-db --file=schema/schema.sql && wrangler d1 execute worldcup-predict-db --file=schema/seed.sql && wrangler d1 execute worldcup-predict-db --file=schema/auth-schema.sql && wrangler d1 execute worldcup-predict-db --file=schema/event-markets-schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

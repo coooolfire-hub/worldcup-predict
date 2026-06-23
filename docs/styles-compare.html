@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI风格对比 · 先知局</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+SC:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    font-family: 'Noto Sans SC', sans-serif;
+    color: #fff;
+    padding: 28px 16px 60px;
+  }
+  .page-title {
+    max-width: 1100px;
+    margin: 0 auto 8px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .page-sub {
+    max-width: 1100px;
+    margin: 0 auto 28px;
+    font-size: 13px;
+    color: #888;
+    line-height: 1.6;
+  }
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; max-width: 380px; } }
+
+  .col-head {
+    margin-bottom: 12px;
+  }
+  .col-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .col-desc {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.5;
+    min-height: 48px;
+  }
+
+  .phone {
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #222;
+  }
+
+  /* ============ 风格 A：Polymarket 原味（克制蓝灰 + 数据感） ============ */
+  .pm {
+    background: #1d2226;
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  }
+  .pm-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #2a3038;
+  }
+  .pm-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .pm-logo b { color: #2d9cdb; }
+  .pm-bal {
+    font-size: 13px; font-weight: 600; color: #2d9cdb;
+    background: #16191d; padding: 5px 11px; border-radius: 6px;
+  }
+  .pm-tabs {
+    display: flex; gap: 6px; padding: 12px 16px 4px; overflow-x: auto;
+  }
+  .pm-tab {
+    font-size: 12px; color: #8b95a1; white-space: nowrap;
+    padding: 5px 10px; border-radius: 6px;
+  }
+  .pm-tab.on { background: #2a3038; color: #fff; }
+  .pm-list { padding: 8px 12px 16px; }
+  .pm-card {
+    background: #232a30; border: 1px solid #2a3038; border-radius: 10px;
+    padding: 13px; margin-bottom: 10px;
+  }
+  .pm-q {
+    display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;
+  }
+  .pm-icon {
+    width: 34px; height: 34px; border-radius: 7px; background: #2d3640;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .pm-qt { font-size: 13px; font-weight: 600; line-height: 1.35; }
+  .pm-qm { font-size: 11px; color: #6b7682; margin-top: 3px; }
+  .pm-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0;
+  }
+  .pm-opt { font-size: 12px; color: #c5ccd3; }
+  .pm-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; font-weight: 600;
+  }
+  .pm-bars {
+    display: flex; gap: 6px; margin-top: 6px;
+  }
+  .pm-btn {
+    flex: 1; text-align: center; padding: 9px 0; border-radius: 7px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .pm-yes { background: rgba(45,156,219,0.14); color: #4bb5f0; }
+  .pm-no { background: rgba(139,149,161,0.14); color: #aab4be; }
+  .pm-foot {
+    display: flex; justify-content: space-between; font-size: 10px; color: #5a636d;
+    margin-top: 10px; padding-top: 9px; border-top: 1px solid #2a3038;
+  }
+
+  /* ============ 风格 B：竞技黑金（强对比 + 荣誉感） ============ */
+  .bk {
+    background: #0d0d0f;
+    font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+  }
+  .bk-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 16px;
+  }
+  .bk-logo { font-size: 17px; font-weight: 700; }
+  .bk-logo b { color: #d4af37; }
+  .bk-bal {
+    font-size: 13px; font-weight: 700; color: #d4af37;
+    border: 1px solid #3a3320; padding: 5px 12px; border-radius: 999px;
+  }
+  .bk-hero {
+    margin: 4px 14px 16px; border-radius: 14px; padding: 16px;
+    background: linear-gradient(135deg, #1a1710 0%, #0d0d0f 70%);
+    border: 1px solid #2a2518;
+  }
+  .bk-stage {
+    font-size: 10px; color: #d4af37; letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .bk-match {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .bk-team { text-align: center; flex: 1; }
+  .bk-flag { font-size: 30px; }
+  .bk-tn { font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .bk-vs { font-size: 13px; font-weight: 700; color: #555; }
+  .bk-opts { display: flex; gap: 8px; }
+  .bk-opt {
+    flex: 1; text-align: center; padding: 11px 0; border-radius: 10px;
+    background: #16140d; border: 1px solid #2a2518; cursor: pointer;
+  }
+  .bk-opt.hot { border-color: #d4af37; }
+  .bk-ol { font-size: 11px; color: #999; }
+  .bk-om { font-size: 17px; font-weight: 700; color: #d4af37; margin-top: 3px; }
+  .bk-sec { padding: 0 16px; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+  .bk-lb { margin: 0 14px; }
+  .bk-lbr {
+    display: flex; align-items: center; gap: 11px; padding: 11px 0;
+    border-bottom: 1px solid #1a1a1d;
+  }
+  .bk-rank { font-size: 15px; font-weight: 700; width: 20px; color: #d4af37; }
+  .bk-av { width: 30px; height: 30px; border-radius: 50%; background: #1a1a1d; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .bk-ln { font-size: 12px; font-weight: 600; flex: 1; }
+  .bk-ls { font-size: 11px; color: #d4af37; }
+
+  /* ============ 风格 C：极简白卡（清爽 + 高信任感） ============ */
+  .mn {
+    background: #f7f7f5;
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    color: #1a1a1a;
+  }
+  .mn-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 16px; background: #fff; border-bottom: 1px solid #ececec;
+  }
+  .mn-logo { font-size: 16px; font-weight: 700; }
+  .mn-logo b { color: #e2543a; }
+  .mn-bal { font-size: 13px; font-weight: 600; color: #1a1a1a; background: #f0f0ee; padding: 5px 12px; border-radius: 8px; }
+  .mn-list { padding: 14px 14px 16px; }
+  .mn-card {
+    background: #fff; border: 1px solid #ececec; border-radius: 14px;
+    padding: 15px; margin-bottom: 12px;
+  }
+  .mn-meta { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 12px; }
+  .mn-stage { color: #e2543a; font-weight: 600; }
+  .mn-teams { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 14px; }
+  .mn-team { text-align: center; }
+  .mn-flag { font-size: 26px; }
+  .mn-tn { font-size: 12px; font-weight: 600; margin-top: 3px; }
+  .mn-vs { font-size: 11px; color: #bbb; font-weight: 600; }
+  .mn-dist { display: flex; height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+  .mn-dl { font-size: 10px; color: #aaa; margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .mn-opts { display: flex; gap: 8px; }
+  .mn-opt {
+    flex: 1; text-align: center; padding: 10px 0; border-radius: 10px;
+    border: 1px solid #ececec; cursor: pointer;
+  }
+  .mn-ol { font-size: 11px; color: #888; }
+  .mn-om { font-size: 15px; font-weight: 700; margin-top: 2px; }
+</style>
+</head>
+<body>
+  <div class="page-title">三种界面风格 · 同一个产品</div>
+  <div class="page-sub">都是世界杯预测的首页，同样的内容，三种不同的视觉方向。左右滑动看完整后挑一个，我再把选中的那版做成完整可交互页面。</div>
+
+  <div class="grid">
+
+    <!-- ========== 风格 A ========== -->
+    <div>
+      <div class="col-head">
+        <div class="col-name">A · Polymarket 原味</div>
+        <div class="col-desc">最贴近 PM：深蓝灰、信息密集、百分比是主角、克制不花哨。适合想直接"对标 PM 中文版"的定位。</div>
+      </div>
+      <div class="phone pm">
+        <div class="pm-top">
+          <div class="pm-logo">先知<b>局</b></div>
+          <div class="pm-bal">2,480 点</div>
+        </div>
+        <div class="pm-tabs">
+          <div class="pm-tab on">全部</div>
+          <div class="pm-tab">小组赛</div>
+          <div class="pm-tab">淘汰赛</div>
+          <div class="pm-tab">热门</div>
+        </div>
+        <div class="pm-list">
+          <div class="pm-card">
+            <div class="pm-q">
+              <div class="pm-icon">⚽</div>
+              <div>
+                <div class="pm-qt">葡萄牙 vs 西班牙，谁能赢？</div>
+                <div class="pm-qm">今晚 23:00 · 8,402 人预测</div>
+              </div>
+            </div>
+            <div class="pm-row"><span class="pm-opt">葡萄牙胜</span><span class="pm-pct" style="color:#4bb5f0">42%</span></div>
+            <div class="pm-row"><span class="pm-opt">平局</span><span class="pm-pct" style="color:#aab4be">21%</span></div>
+            <div class="pm-row"><span class="pm-opt">西班牙胜</span><span class="pm-pct" style="color:#4bb5f0">37%</span></div>
+            <div class="pm-bars">
+              <div class="pm-btn pm-yes">预测葡萄牙 · 2.1×</div>
+              <div class="pm-btn pm-no">预测西班牙 · 2.6×</div>
+            </div>
+            <div class="pm-foot"><span>F组</span><span>预测倍率开赛前锁定</span></div>
+          </div>
+          <div class="pm-card">
+            <div class="pm-q">
+              <div class="pm-icon">⚽</div>
+              <div>
+                <div class="pm-qt">本场会不会双方都进球？</div>
+                <div class="pm-qm">今晚 23:00 · 5,113 人预测</div>
+              </div>
+            </div>
+            <div class="pm-row"><span class="pm-opt">会</span><span class="pm-pct" style="color:#4bb5f0">64%</span></div>
+            <div class="pm-row"><span class="pm-opt">不会</span><span class="pm-pct" style="color:#aab4be">36%</span></div>
+            <div class="pm-bars">
+              <div class="pm-btn pm-yes">预测「会」· 1.6×</div>
+              <div class="pm-btn pm-no">预测「不会」· 2.3×</div>
+            </div>
+            <div class="pm-foot"><span>进球数</span><span>命中后按倍率发放点数</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 风格 B ========== -->
+    <div>
+      <div class="col-head">
+        <div class="col-name">B · 竞技黑金</div>
+        <div class="col-desc">强对比、黑金配色、英雄式比赛卡。突出"荣誉感/战绩"，适合主打排名情绪价值、社区氛围更热血的定位。</div>
+      </div>
+      <div class="phone bk">
+        <div class="bk-top">
+          <div class="bk-logo">先知<b>局</b></div>
+          <div class="bk-bal">🔥 2,480</div>
+        </div>
+        <div class="bk-hero">
+          <div class="bk-stage">小组赛 · F组 · 今晚 23:00</div>
+          <div class="bk-match">
+            <div class="bk-team"><div class="bk-flag">🇵🇹</div><div class="bk-tn">葡萄牙</div></div>
+            <div class="bk-vs">VS</div>
+            <div class="bk-team"><div class="bk-flag">🇪🇸</div><div class="bk-tn">西班牙</div></div>
+          </div>
+          <div class="bk-opts">
+            <div class="bk-opt hot"><div class="bk-ol">葡萄牙胜</div><div class="bk-om">2.1</div></div>
+            <div class="bk-opt"><div class="bk-ol">平局</div><div class="bk-om">3.4</div></div>
+            <div class="bk-opt"><div class="bk-ol">西班牙胜</div><div class="bk-om">2.6</div></div>
+          </div>
+        </div>
+        <div class="bk-sec">🏆 连胜榜</div>
+        <div class="bk-lb">
+          <div class="bk-lbr"><span class="bk-rank">1</span><div class="bk-av">🦉</div><div class="bk-ln">老王看球</div><div class="bk-ls">🔥 12连胜</div></div>
+          <div class="bk-lbr"><span class="bk-rank">2</span><div class="bk-av">🐯</div><div class="bk-ln">球场判官</div><div class="bk-ls">🔥 9连胜</div></div>
+          <div class="bk-lbr"><span class="bk-rank">3</span><div class="bk-av">🦊</div><div class="bk-ln">阿根廷之友</div><div class="bk-ls">🔥 7连胜</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 风格 C ========== -->
+    <div>
+      <div class="col-head">
+        <div class="col-name">C · 极简白卡</div>
+        <div class="col-desc">浅色、清爽、信任感强，最不像博彩站。监管视角下观感最"软"，但少了点夜间看球的氛围感。</div>
+      </div>
+      <div class="phone mn">
+        <div class="mn-top">
+          <div class="mn-logo">先知<b>局</b></div>
+          <div class="mn-bal">2,480 点</div>
+        </div>
+        <div class="mn-list">
+          <div class="mn-card">
+            <div class="mn-meta"><span class="mn-stage">小组赛 · F组</span><span>今晚 23:00</span></div>
+            <div class="mn-teams">
+              <div class="mn-team"><div class="mn-flag">🇵🇹</div><div class="mn-tn">葡萄牙</div></div>
+              <div class="mn-vs">VS</div>
+              <div class="mn-team"><div class="mn-flag">🇪🇸</div><div class="mn-tn">西班牙</div></div>
+            </div>
+            <div class="mn-dist">
+              <div style="width:42%;background:#4f9d69"></div>
+              <div style="width:21%;background:#d9c34b"></div>
+              <div style="width:37%;background:#c96b6b"></div>
+            </div>
+            <div class="mn-dl"><span>8,402 人预测</span><span>葡 42% · 平 21% · 西 37%</span></div>
+            <div class="mn-opts">
+              <div class="mn-opt"><div class="mn-ol">葡萄牙胜</div><div class="mn-om">2.1×</div></div>
+              <div class="mn-opt"><div class="mn-ol">平局</div><div class="mn-om">3.4×</div></div>
+              <div class="mn-opt"><div class="mn-ol">西班牙胜</div><div class="mn-om">2.6×</div></div>
+            </div>
+          </div>
+          <div class="mn-card">
+            <div class="mn-meta"><span class="mn-stage">小组赛 · H组</span><span>明晚 03:00</span></div>
+            <div class="mn-teams">
+              <div class="mn-team"><div class="mn-flag">🇰🇷</div><div class="mn-tn">韩国</div></div>
+              <div class="mn-vs">VS</div>
+              <div class="mn-team"><div class="mn-flag">🇲🇦</div><div class="mn-tn">摩洛哥</div></div>
+            </div>
+            <div class="mn-dist">
+              <div style="width:35%;background:#4f9d69"></div>
+              <div style="width:28%;background:#d9c34b"></div>
+              <div style="width:37%;background:#c96b6b"></div>
+            </div>
+            <div class="mn-dl"><span>3,917 人预测</span><span>韩 35% · 平 28% · 摩 37%</span></div>
+            <div class="mn-opts">
+              <div class="mn-opt"><div class="mn-ol">韩国胜</div><div class="mn-om">2.4×</div></div>
+              <div class="mn-opt"><div class="mn-ol">平局</div><div class="mn-om">3.1×</div></div>
+              <div class="mn-opt"><div class="mn-ol">摩洛哥胜</div><div class="mn-om">2.3×</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
