@@ -1,0 +1,13 @@
+{
+  "name": "worldcup-predict-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "世界杯预测 - Node.js服务器版（腾讯云部署）",
+  "scripts": {
+    "init": "node init-db.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0"
+  }
+}

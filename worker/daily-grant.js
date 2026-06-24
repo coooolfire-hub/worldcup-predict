@@ -18,7 +18,8 @@ export async function handleDailyGrant(request, env) {
     });
   }
 
-  const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'，按服务器时区，上线前确认是否要换成北京时间
+  // 用北京时间（UTC+8）判断"今天"，避免国内用户跨日时间点错位
+  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
 
   if (user.last_daily_grant_date === today) {
     return new Response(

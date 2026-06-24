@@ -46,11 +46,24 @@ export async function handleMarkets(request, env) {
       totalPredictors += d.cnt;
     }
 
+    // 队名可能是 "中文|英文|emoji" 复合格式，拆出来；旧数据没有分隔符就原样用
+    const parseTeam = (s) => {
+      const parts = (s || '').split('|');
+      if (parts.length >= 3) return { cn: parts[0], en: parts[1], flag: parts[2] };
+      return { cn: s, en: '', flag: '' };
+    };
+    const home = parseTeam(match.home_team);
+    const away = parseTeam(match.away_team);
+
     result.push({
       id: match.id,
       stage: match.stage,
-      homeTeam: match.home_team,
-      awayTeam: match.away_team,
+      homeTeam: home.cn,
+      homeTeamEn: home.en,
+      homeFlag: home.flag,
+      awayTeam: away.cn,
+      awayTeamEn: away.en,
+      awayFlag: away.flag,
       kickoffTime: match.kickoff_time,
       totalPredictors,
       tiers: tiers.results.map((t) => ({
@@ -60,7 +73,6 @@ export async function handleMarkets(request, env) {
         outcomeLabel: t.outcome_label,
         multiplier: t.multiplier,
         stakeCap: t.stake_cap,
-        // 预测分布百分比 —— 注意这是"多少人选了它"，不是资金盘口
         sharePct:
           totalPredictors > 0
             ? Math.round(((distMap[t.outcome_key] || 0) / totalPredictors) * 100)

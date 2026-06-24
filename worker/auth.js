@@ -52,17 +52,26 @@ export async function handleRegister(request, env) {
   const openId = 'email_' + email;
   const nick = (nickname && nickname.trim()) || '先知' + Math.floor(1000 + Math.random() * 9000);
 
+  const SIGNUP_BONUS = 1000; // 注册赠送积分
+
   const ins = await db
     .prepare(
       `INSERT INTO users (open_id, email, password_hash, password_salt, nickname, created_via, points_balance)
-       VALUES (?, ?, ?, ?, ?, 'email', 0)`
+       VALUES (?, ?, ?, ?, ?, 'email', ?)`
     )
-    .bind(openId, email, hash, salt, nick)
+    .bind(openId, email, hash, salt, nick, SIGNUP_BONUS)
     .run();
 
   const userId = ins.meta.last_row_id;
+
+  // 记一笔注册赠送的积分账本
+  await db
+    .prepare(`INSERT INTO point_ledger (user_id, change, reason) VALUES (?, ?, 'signup_bonus')`)
+    .bind(userId, SIGNUP_BONUS)
+    .run();
+
   const token = await createSession(db, userId);
-  return jsonOk({ token, userId, nickname: nick, pointsBalance: 0, isNewUser: true });
+  return jsonOk({ token, userId, nickname: nick, pointsBalance: SIGNUP_BONUS, isNewUser: true });
 }
 
 // ---------- 登录 ----------

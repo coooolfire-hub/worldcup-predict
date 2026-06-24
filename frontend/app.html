@@ -66,6 +66,15 @@
   .market:hover { border-color:#38414d; }
   .m-head { display:flex; gap:11px; align-items:flex-start; margin-bottom:13px; cursor:pointer; }
   .m-thumb { width:38px; height:38px; border-radius:8px; background:var(--surface-2); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  /* PM风格对阵区 */
+  .m-matchup { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:11px; }
+  .team-side { display:flex; align-items:center; gap:9px; flex:1; min-width:0; }
+  .team-side.team-right { justify-content:flex-end; text-align:right; }
+  .team-flag { font-size:26px; flex-shrink:0; line-height:1; }
+  .team-txt { min-width:0; }
+  .team-cn { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .team-en { font-size:10px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vs-sep { font-size:12px; font-weight:700; color:var(--text-dimmer); flex-shrink:0; padding:0 2px; }
   .m-title { font-size:13.5px; font-weight:600; line-height:1.35; }
   .m-meta { font-size:11px; color:var(--text-dim); margin-top:4px; }
   .multi-row { display:flex; align-items:center; gap:9px; padding:6px 0; cursor:pointer; border-radius:6px; }
@@ -196,6 +205,7 @@
     </div>
     <div class="page" id="page-me">
       <div class="me-card">
+        <div class="me-nick" id="meNick" style="font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text-dim)"></div>
         <div class="me-bal" id="meBal">—</div>
         <div class="me-bal-lbl">我的积分</div>
         <div class="me-stats">
@@ -203,7 +213,10 @@
           <div class="me-stat"><div class="me-stat-n" id="meBest">0</div><div class="me-stat-l">最高连胜</div></div>
           <div class="me-stat"><div class="me-stat-n" id="meAch">0</div><div class="me-stat-l">成就</div></div>
         </div>
+        <button onclick="logout()" style="margin-top:18px;width:100%;background:transparent;border:1px solid var(--line);color:var(--text-dim);border-radius:10px;padding:12px;font-size:13px;cursor:pointer;font-family:inherit">退出登录</button>
       </div>
+      <div class="lb-head" style="font-size:15px;padding-top:8px">我的投注记录</div>
+      <div class="lb-list" id="myBets"></div>
     </div>
     <div class="page" id="page-achievements">
       <div class="empty">成就系统开发中<br>命中5/10/20连胜可解锁专属称号</div>
@@ -216,7 +229,6 @@
     <div class="tab" data-tab="me" onclick="switchTab('me')"><span class="tab-ic">👤</span><span>我的</span></div>
   </div>
   <div class="toast" id="toast"></div>
-  <div class="banner">数据来源：<b id="modeLabel" onclick="toggleMode()">演示模式（点击切换真实接口）</b></div>
 
   <div class="modal-mask" id="loginModal">
     <div class="modal modal-wrap">
@@ -244,8 +256,8 @@
     </div>
   </div>
 <script>
-const CONFIG = { API_BASE:'https://worldcup-predict.your-subdomain.workers.dev', USER_ID:1 };
-let DEMO_MODE = true;
+const CONFIG = { API_BASE:'', USER_ID:1 }; // 空=相对路径，前后端同源，部署到IP或域名都自动适配
+let DEMO_MODE = false;
 let LOGGED_IN = false;
 
 const DEMO = {
@@ -304,46 +316,65 @@ const DEMO = {
 };
 const AVATARS = ['🦉','🐯','🦊','🐺','🦁','🐻','🦅','🐢','🐬','🦈'];
 
-async function api(path, opts){ if(DEMO_MODE) throw new Error('DEMO'); const r=await fetch(CONFIG.API_BASE+path,opts); return r.json(); }
+async function api(path, opts){ const r=await fetch(CONFIG.API_BASE+path,opts); return r.json(); }
 
 async function loadMarkets(){
   let markets;
-  if(DEMO_MODE){
-    markets=DEMO.markets;
-  } else {
-    try{
-      // 真实模式：同时拉单场市场和赛事级市场（夺冠/金靴），合并展示
-      const [single, events] = await Promise.all([
-        api('/api/markets').catch(()=>({markets:[]})),
-        api('/api/event-markets').catch(()=>({markets:[]})),
-      ]);
-      const singleMarkets = (single.markets||[]).map(m=>({...m, isEvent:false}));
-      // 赛事市场转换成统一的市场结构，tiers 用 options
-      const eventMarkets = (events.markets||[]).map(em=>({
-        id: 'ev_'+em.id,        // 加前缀区分，避免和单场id冲突
-        rawId: em.id,
-        isEvent: true,
-        marketCode: em.marketCode,
-        title: em.title,
-        stage: em.marketCode==='champion'?'夺冠预测':'金靴预测',
-        homeTeam:'', awayTeam:'',
-        thumb: em.marketCode==='champion'?'🏆':'👟',
-        totalPredictors: em.totalPredictors,
-        tiers: em.options.map(o=>({
-          predictionTypeCode: em.marketCode,
-          outcomeKey: o.outcomeKey, outcomeLabel: o.outcomeLabel,
-          multiplier: o.multiplier, stakeCap: o.stakeCap, sharePct: o.sharePct,
-        })),
-      }));
-      markets = [...singleMarkets, ...eventMarkets];
-    }catch(e){ markets=DEMO.markets; }
-  }
+  try{
+    // 同时拉单场市场和赛事级市场（夺冠/金靴），合并展示
+    const [single, events] = await Promise.all([
+      api('/api/markets').catch(()=>({markets:[]})),
+      api('/api/event-markets').catch(()=>({markets:[]})),
+    ]);
+    const singleMarkets = (single.markets||[]).map(m=>({...m, isEvent:false}));
+    const eventMarkets = (events.markets||[]).map(em=>({
+      id: 'ev_'+em.id,
+      rawId: em.id,
+      isEvent: true,
+      marketCode: em.marketCode,
+      title: em.title,
+      stage: em.marketCode==='champion'?'夺冠预测':'金靴预测',
+      homeTeam:'', awayTeam:'',
+      thumb: em.marketCode==='champion'?'🏆':'👟',
+      totalPredictors: em.totalPredictors,
+      tiers: em.options.map(o=>({
+        predictionTypeCode: em.marketCode,
+        outcomeKey: o.outcomeKey, outcomeLabel: o.outcomeLabel,
+        multiplier: o.multiplier, stakeCap: o.stakeCap, sharePct: o.sharePct,
+      })),
+    }));
+    markets = [...singleMarkets, ...eventMarkets];
+  }catch(e){ markets=[]; }
   window._allMarkets=markets;
   renderMarkets(markets);
   const tp=markets.reduce((s,m)=>s+m.totalPredictors,0);
   document.getElementById('heroMarkets').textContent=markets.length;
   document.getElementById('heroPredictors').textContent=(tp/1000).toFixed(1)+'k';
 }
+// 把unix时间戳格式化成北京时间显示，如"今天 23:00"/"明天 03:00"/"6月25日 21:00"
+function formatKickoff(ts){
+  const d=new Date(ts*1000);
+  // 转北京时间（UTC+8）
+  const bj=new Date(ts*1000 + 8*3600*1000);
+  const now=new Date(Date.now()+8*3600*1000);
+  const hh=String(bj.getUTCHours()).padStart(2,'0');
+  const mm=String(bj.getUTCMinutes()).padStart(2,'0');
+  const dayDiff=Math.floor((Date.UTC(bj.getUTCFullYear(),bj.getUTCMonth(),bj.getUTCDate()) - Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()))/86400000);
+  let dayLabel;
+  if(dayDiff===0) dayLabel='今天';
+  else if(dayDiff===1) dayLabel='明天';
+  else if(dayDiff===2) dayLabel='后天';
+  else dayLabel=`${bj.getUTCMonth()+1}月${bj.getUTCDate()}日`;
+  return `${dayLabel} ${hh}:${mm}`;
+}
+
+// 解析队名 "中文|English|🇵🇹" → {cn, en, flag}；普通字符串则只有cn
+function parseTeam(raw){
+  if(!raw) return {cn:'', en:'', flag:''};
+  const parts=String(raw).split('|');
+  return { cn:parts[0]||'', en:parts[1]||'', flag:parts[2]||'' };
+}
+
 function renderMarkets(markets){
   const el=document.getElementById('marketList');
   el.innerHTML=markets.map((m)=>{
@@ -356,11 +387,29 @@ function renderMarkets(markets){
         <span class="multi-mult">${t.multiplier}×</span>
       </div>`).join('');
     const code=m.tiers[0]&&m.tiers[0].predictionTypeCode;
-    const title=m.title||(code==='both_teams_score'?`${m.homeTeam} vs ${m.awayTeam}，双方都会进球吗？`:`${m.homeTeam} vs ${m.awayTeam}，本场谁胜？`);
-    const metaLeft=m.isEvent?m.stage:`${m.stage}`;
-    return `<div class="market" data-market="${m.id}" data-search="${m.homeTeam||''}${m.awayTeam||''}${m.stage}${m.title||''}">
-      <div class="m-head"><div class="m-thumb">${m.thumb||'⚽'}</div>
-        <div><div class="m-title">${title}</div><div class="m-meta">${metaLeft} · ${m.totalPredictors.toLocaleString()} 人预测</div></div></div>
+    // 后端已把队名拆成独立字段：homeTeam(中文) homeTeamEn(英文) homeFlag(国旗)
+    const h={cn:m.homeTeam||'', en:m.homeTeamEn||'', flag:m.homeFlag||''};
+    const a={cn:m.awayTeam||'', en:m.awayTeamEn||'', flag:m.awayFlag||''};
+    // 单场比赛显示北京时间开赛时间；赛事市场（夺冠/金靴）没有具体开赛时间
+    const timeStr=(!m.isEvent && m.kickoffTime) ? formatKickoff(m.kickoffTime) : '';
+    const metaLeft=m.isEvent?m.stage:`${m.stage}${timeStr?' · '+timeStr:''}`;
+
+    // 标题区：赛事市场用m.title；单场比赛用"国旗 中文 vs 国旗 中文"，下面带英文小字
+    let headHtml;
+    if(m.isEvent || m.title){
+      headHtml=`<div class="m-head"><div class="m-thumb">${m.thumb||'⚽'}</div>
+        <div><div class="m-title">${m.title||(`${h.cn} vs ${a.cn}`)}</div>
+        <div class="m-meta">${metaLeft} · ${m.totalPredictors.toLocaleString()} 人预测</div></div></div>`;
+    } else {
+      headHtml=`<div class="m-matchup">
+          <div class="team-side"><span class="team-flag">${h.flag||'⚽'}</span><div class="team-txt"><div class="team-cn">${h.cn}</div><div class="team-en">${h.en}</div></div></div>
+          <span class="vs-sep">VS</span>
+          <div class="team-side team-right"><div class="team-txt"><div class="team-cn">${a.cn}</div><div class="team-en">${a.en}</div></div><span class="team-flag">${a.flag||'⚽'}</span></div>
+        </div>
+        <div class="m-meta" style="text-align:center;margin-bottom:11px">${metaLeft} · ${m.totalPredictors.toLocaleString()} 人预测</div>`;
+    }
+    return `<div class="market" data-market="${m.id}" data-search="${h.cn}${h.en}${a.cn}${a.en}${m.stage}${m.title||''}">
+      ${headHtml}
       ${rows}
       <div class="stake" id="stake-${m.id}">
         <div class="stake-info">预测 <b id="sel-label-${m.id}">—</b>，倍率 <b id="sel-mult-${m.id}">—</b></div>
@@ -404,7 +453,6 @@ async function submitPredict(id){
   const stake=parseInt(document.getElementById(`stake-input-${id}`).value||'0',10);
   if(stake<=0) return showToast('请输入预测点数');
   if(stake>tier.stakeCap) return showToast(`单次最多预测 ${tier.stakeCap.toLocaleString()} 点`);
-  if(DEMO_MODE){ showToast(`已预测「${tier.outcomeLabel}」${stake} 点（演示）`); document.getElementById(`stake-${id}`).classList.remove('show'); return; }
   try{
     let data;
     if(market.isEvent){
@@ -425,6 +473,35 @@ async function loadMe(){
   document.getElementById('meStreak').textContent=me.currentStreak;
   document.getElementById('meBest').textContent=me.bestStreak;
   document.getElementById('meAch').textContent=(me.achievements||[]).length;
+  if(me.nickname) document.getElementById('meNick').textContent=me.nickname;
+  loadMyBets();
+}
+// 加载我的投注记录
+async function loadMyBets(){
+  const box=document.getElementById('myBets');
+  if(DEMO_MODE){ box.innerHTML='<div class="empty" style="padding:30px">登录后查看投注记录</div>'; return; }
+  let preds;
+  try{ preds=(await api(`/api/my-predictions?userId=${CONFIG.USER_ID}`)).predictions||[]; }
+  catch(e){ box.innerHTML='<div class="empty" style="padding:30px">暂无投注记录</div>'; return; }
+  if(preds.length===0){ box.innerHTML='<div class="empty" style="padding:30px">还没有投注，去预测一场吧</div>'; return; }
+  box.innerHTML=preds.map(p=>{
+    const h=parseTeam(p.home_team), a=parseTeam(p.away_team);
+    const matchName=`${h.cn||p.home_team} vs ${a.cn||p.away_team}`;
+    // 状态：pending进行中 / won猜中 / lost未中 / void取消
+    let statusTag, statusColor;
+    if(p.status==='won'){ statusTag=`+${p.points_awarded}`; statusColor='var(--green)'; }
+    else if(p.status==='lost'){ statusTag='未命中'; statusColor='var(--text-dim)'; }
+    else if(p.status==='void'){ statusTag='已退还'; statusColor='var(--text-dim)'; }
+    else { statusTag='进行中'; statusColor='var(--pm-blue)'; }
+    const scoreStr=(p.home_score!=null&&p.away_score!=null)?` (${p.home_score}:${p.away_score})`:'';
+    return `<div class="lb-row" style="align-items:flex-start">
+      <div class="lb-info">
+        <div class="lb-name">${matchName}${scoreStr}</div>
+        <div class="lb-sub">押「${p.outcome_label||p.outcome_key}」${p.points_staked}点 · ${p.multiplier_locked}×</div>
+      </div>
+      <div class="lb-val" style="color:${statusColor};font-size:13px">${statusTag}</div>
+    </div>`;
+  }).join('');
 }
 async function loadLeaderboard(type,btn){
   if(btn) document.querySelectorAll('.lb-t').forEach(b=>b.classList.toggle('on',b===btn));
@@ -447,7 +524,7 @@ function switchTab(name){
 }
 let toastTimer;
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
-function toggleMode(){ DEMO_MODE=!DEMO_MODE; document.getElementById('modeLabel').textContent=DEMO_MODE?'演示模式（点击切换真实接口）':'真实接口模式（点击切回演示）'; loadMarkets(); if(LOGGED_IN) loadMe(); else if(!DEMO_MODE) tryRestoreSession(); showToast(DEMO_MODE?'已切到演示数据':'已切到真实接口'); }
+// 全程真实模式（已无演示模式）
 
 /* 登录 */
 function openLogin(){ document.getElementById('loginModal').classList.add('show'); }
@@ -500,6 +577,15 @@ function onLoginSuccess(nickname){
   document.getElementById('avatarBtn').style.display='flex';
   if(nickname) showToast('欢迎，'+nickname);
   else showToast('登录成功');
+  claimDailyGrant();
+}
+// 领取每日积分（每天第一次登录自动发1000，后端按北京时间判断当天是否已领）
+async function claimDailyGrant(){
+  if(DEMO_MODE){ loadMe(); return; }
+  try{
+    const data=await api('/api/daily-grant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:CONFIG.USER_ID})});
+    if(data.success && data.granted){ showToast('每日签到 +'+data.amount+' 点'); }
+  }catch(e){ /* 领取失败不影响登录 */ }
   loadMe();
 }
 function logout(){ clearToken(); location.reload(); }

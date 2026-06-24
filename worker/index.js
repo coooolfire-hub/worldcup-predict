@@ -15,6 +15,9 @@ import { handleRegister, handleLogin, handleSession } from './auth.js';
 import { handleEventPredict } from './predict.js';
 import { syncMatches } from './sync.js';
 import { seedEventMarkets } from './seed-events.js';
+import { handleSeedTestMatches, handleSettleTest } from './test-seed.js';
+import { handleSeedRealMatches } from './real-seed.js';
+import { FRONTEND_HTML } from './frontend-html.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -43,10 +46,17 @@ export default {
   },
 };
 
-async function route(request, env, url) {
+export async function route(request, env, url) {
   const p = url.pathname;
   const GET = request.method === 'GET';
   const POST = request.method === 'POST';
+
+  // -------- 前端页面（根路径返回HTML，走 .workers.dev 域名访问） --------
+  if (GET && (p === '/' || p === '/index.html' || p === '/app')) {
+    return new Response(FRONTEND_HTML, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
 
   // -------- 读接口 --------
   if (GET && p === '/api/markets') return handleMarkets(request, env);
@@ -85,6 +95,18 @@ async function route(request, env, url) {
     if (POST && p === '/api/admin/run-settlement') {
       const summary = await runSettlement(env);
       return new Response(JSON.stringify(summary), { headers: JSON_HEADERS });
+    }
+    // 一键生成测试比赛（内测用，不依赖外部api）
+    if (POST && p === '/api/admin/seed-test-matches') {
+      return handleSeedTestMatches(request, env);
+    }
+    // 录入真实场次（来自截图）
+    if (POST && p === '/api/admin/seed-real-matches') {
+      return handleSeedRealMatches(request, env);
+    }
+    // 手动结算测试比赛（指定比分）
+    if (POST && p === '/api/admin/settle-test') {
+      return handleSettleTest(request, env);
     }
   }
 
