@@ -28,11 +28,17 @@ export async function handleDailyGrant(request, env) {
     );
   }
 
+  // 计算连续登录天数：上次登录是"昨天"则+1，否则重置为1
+  const yesterday = new Date(Date.now() + 8 * 3600 * 1000 - 86400 * 1000).toISOString().slice(0, 10);
+  let newStreak;
+  if (user.last_login_date === yesterday) newStreak = (user.login_streak || 0) + 1;
+  else newStreak = 1;
+
   await db
     .prepare(
-      'UPDATE users SET points_balance = points_balance + ?, last_daily_grant_date = ? WHERE id = ?'
+      'UPDATE users SET points_balance = points_balance + ?, last_daily_grant_date = ?, login_streak = ?, last_login_date = ? WHERE id = ?'
     )
-    .bind(DAILY_GRANT_AMOUNT, today, userId)
+    .bind(DAILY_GRANT_AMOUNT, today, newStreak, today, userId)
     .run();
 
   await db

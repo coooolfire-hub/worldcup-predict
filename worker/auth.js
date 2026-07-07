@@ -70,8 +70,20 @@ export async function handleRegister(request, env) {
     .bind(userId, SIGNUP_BONUS)
     .run();
 
+  // 注册当天直接发放当日签到积分（注册礼1000 + 当日签到1000 = 2000）
+  const DAILY = 1000;
+  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  await db
+    .prepare(`UPDATE users SET points_balance = points_balance + ?, last_daily_grant_date = ?, login_streak = 1, last_login_date = ? WHERE id = ?`)
+    .bind(DAILY, today, today, userId)
+    .run();
+  await db
+    .prepare(`INSERT INTO point_ledger (user_id, change, reason) VALUES (?, ?, 'daily_grant')`)
+    .bind(userId, DAILY)
+    .run();
+
   const token = await createSession(db, userId);
-  return jsonOk({ token, userId, nickname: nick, pointsBalance: SIGNUP_BONUS, isNewUser: true });
+  return jsonOk({ token, userId, nickname: nick, pointsBalance: SIGNUP_BONUS + DAILY, isNewUser: true });
 }
 
 // ---------- 登录 ----------
@@ -113,6 +125,27 @@ export async function getUserIdFromToken(request, env) {
   const now = Math.floor(Date.now() / 1000);
   const s = await env.DB.prepare('SELECT user_id FROM sessions WHERE token=? AND expires_at>?').bind(token, now).first();
   return s ? s.user_id : null;
+}
+
+// 管理员重置某用户密码（朋友忘密码时，你后台帮他重置）
+// POST /api/admin/reset-password  body: { email, newPassword }
+export async function handleAdminResetPassword(request, env) {
+  const { email, newPassword } = await request.json();
+  if (!EMAIL_RE.test(email || '')) return jsonError('邮箱格式错误', 400);
+  if (!newPassword || newPassword.length < 6) return jsonError('新密码至少6位', 400);
+
+  const db = env.DB;
+  const user = await db.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
+  if (!user) return jsonError('该邮箱未注册', 404);
+
+  const { hash, salt } = await hashPassword(newPassword);
+  await db.prepare('UPDATE users SET password_hash=?, password_salt=? WHERE id=?')
+    .bind(hash, salt, user.id).run();
+
+  // 重置后让该用户已有的登录会话失效，强制用新密码重新登录
+  await db.prepare('DELETE FROM sessions WHERE user_id=?').bind(user.id).run();
+
+  return jsonOk({ message: `已重置 ${email} 的密码，旧登录已失效` });
 }
 
 async function createSession(db, userId) {

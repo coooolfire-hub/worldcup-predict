@@ -1,34 +1,54 @@
 // ============================================================
 // 排行榜接口
-// GET /api/leaderboard?type=points|streak&limit=50
+// GET /api/leaderboard?type=points|wins&limit=50
 //
 // 两种榜：
-//   - points: 当前积分余额榜（注意这是"手里有多少"，不是"赢了多少"，
-//     爱冒险全押的人余额未必高，这个区分对用户心理感受很重要）
-//   - streak: 当前连续命中榜，对应产品里最想强化的"猜得准"荣誉感
+//   - points: 当前积分余额榜（手里有多少积分）
+//   - wins:   胜利榜，按累计猜中场次（predictions 里 status='won' 的数量）排名
 // ============================================================
 
 export async function handleLeaderboard(request, env) {
   const db = env.DB;
   const url = new URL(request.url);
-  const type = url.searchParams.get('type') || 'points';
+  const type = url.searchParams.get('type') || 'score';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 100);
 
-  if (type === 'streak') {
+  if (type === 'score') {
+    // 得分榜：累计赢得的积分总和（押中的所有 payout，含单场和赛事）
     const rows = await db
       .prepare(
-        `SELECT u.id, u.nickname, s.current_streak, s.best_streak
-         FROM user_streaks s
-         JOIN users u ON u.id = s.user_id
-         ORDER BY s.current_streak DESC, s.best_streak DESC
+        `SELECT u.id, u.nickname,
+                COALESCE(SUM(l.change), 0) AS total_won,
+                u.points_balance
+         FROM users u
+         JOIN point_ledger l ON l.user_id = u.id AND l.reason IN ('payout','event_payout')
+         GROUP BY u.id
+         ORDER BY total_won DESC, u.points_balance DESC
          LIMIT ?`
       )
       .bind(limit)
       .all();
-
-    return jsonOk({ type: 'streak', rows: rows.results });
+    return jsonOk({ type: 'score', rows: rows.results });
   }
 
+  if (type === 'wins') {
+    // 胜利榜：累计猜中场次（单场 + 赛事）
+    const rows = await db
+      .prepare(
+        `SELECT u.id, u.nickname, u.points_balance,
+                (SELECT COUNT(*) FROM predictions p WHERE p.user_id=u.id AND p.status='won')
+              + (SELECT COUNT(*) FROM event_predictions e WHERE e.user_id=u.id AND e.status='won') AS win_count
+         FROM users u
+         WHERE win_count > 0
+         ORDER BY win_count DESC, u.points_balance DESC
+         LIMIT ?`
+      )
+      .bind(limit)
+      .all();
+    return jsonOk({ type: 'wins', rows: rows.results });
+  }
+
+  // 积分榜：当前余额
   const rows = await db
     .prepare(
       `SELECT id, nickname, points_balance

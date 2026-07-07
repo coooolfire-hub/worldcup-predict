@@ -8,12 +8,15 @@
 export async function handleMarkets(request, env) {
   const db = env.DB;
 
+  const nowSec = Math.floor(Date.now() / 1000);
   const matches = await db
     .prepare(
       `SELECT * FROM matches
        WHERE status = 'scheduled' AND tiers_locked_at IS NOT NULL
+         AND kickoff_time > ?
        ORDER BY kickoff_time ASC`
     )
+    .bind(nowSec)
     .all();
 
   const result = [];
@@ -162,7 +165,7 @@ function jsonError(message, status) {
 export async function handleEventMarkets(request, env) {
   const db = env.DB;
   const markets = await db
-    .prepare("SELECT * FROM event_markets WHERE status='open' ORDER BY id")
+    .prepare("SELECT * FROM event_markets WHERE status='open' AND (review_status='approved' OR review_status IS NULL) ORDER BY id")
     .all();
 
   const result = [];
@@ -184,15 +187,23 @@ export async function handleEventMarkets(request, env) {
     result.push({
       id: m.id,
       marketCode: m.market_code,
+      category: m.category || 'worldcup',
       title: m.title,
+      closeTime: m.close_time,
+      closed: m.close_time ? (Math.floor(Date.now()/1000) >= m.close_time) : false,
       totalPredictors: total,
-      options: options.results.map((o) => ({
-        outcomeKey: o.outcome_key,
-        outcomeLabel: o.outcome_label,
-        multiplier: o.multiplier,
-        stakeCap: o.stake_cap,
-        sharePct: total > 0 ? Math.round(((distMap[o.outcome_key] || 0) / total) * 100) : 0,
-      })),
+      options: options.results.map((o) => {
+        // 夺冠选项label是"法国|fr"含国旗代码；金靴是纯名字
+        const parts = (o.outcome_label || '').split('|');
+        return {
+          outcomeKey: o.outcome_key,
+          outcomeLabel: parts[0],
+          flag: parts[1] || '',
+          multiplier: o.multiplier,
+          stakeCap: o.stake_cap,
+          sharePct: total > 0 ? Math.round(((distMap[o.outcome_key] || 0) / total) * 100) : 0,
+        };
+      }),
     });
   }
   return new Response(JSON.stringify({ success: true, markets: result }), {
