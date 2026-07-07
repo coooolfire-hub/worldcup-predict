@@ -48,9 +48,7 @@ export async function handlePredict(request, env) {
 
   if (!tier) return jsonError('该预测选项不存在或尚未开放', 404);
 
-  if (pointsStaked > tier.stake_cap) {
-    return jsonError(`单次押注不能超过 ${tier.stake_cap} 点`, 400);
-  }
+  // 已取消单笔押注上限，只受余额限制
 
   const user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
   if (!user) return jsonError('用户不存在', 404);
@@ -112,6 +110,10 @@ export async function handleEventPredict(request, env) {
   const market = await db.prepare('SELECT * FROM event_markets WHERE id=?').bind(marketId).first();
   if (!market) return eventErr('市场不存在', 404);
   if (market.status !== 'open') return eventErr('该市场已截止', 400);
+  // 到达截止时间后停止下注
+  if (market.close_time && Math.floor(Date.now() / 1000) >= market.close_time) {
+    return eventErr('该市场已截止下注', 400);
+  }
 
   const option = await db
     .prepare('SELECT * FROM event_market_options WHERE market_id=? AND outcome_key=?')
@@ -119,9 +121,7 @@ export async function handleEventPredict(request, env) {
     .first();
   if (!option) return eventErr('选项不存在', 404);
 
-  if (pointsStaked > option.stake_cap) {
-    return eventErr(`单次押注不能超过 ${option.stake_cap} 点`, 400);
-  }
+  // 已取消单笔押注上限，只受余额限制
 
   const user = await db.prepare('SELECT * FROM users WHERE id=?').bind(userId).first();
   if (!user) return eventErr('用户不存在', 404);

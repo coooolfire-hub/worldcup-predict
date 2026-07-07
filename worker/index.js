@@ -10,13 +10,20 @@ import { handlePredict } from './predict.js';
 import { handleDailyGrant } from './daily-grant.js';
 import { runSettlement } from './settle.js';
 import { handleLeaderboard } from './leaderboard.js';
+import { handleAchievements, handleAchievementBoard } from './achievements.js';
 import { handleMarkets, handleMe, handleMyPredictions, handleEventMarkets } from './queries.js';
-import { handleRegister, handleLogin, handleSession } from './auth.js';
+import { handleRegister, handleLogin, handleSession, handleAdminResetPassword } from './auth.js';
 import { handleEventPredict } from './predict.js';
 import { syncMatches } from './sync.js';
 import { seedEventMarkets } from './seed-events.js';
-import { handleSeedTestMatches, handleSettleTest } from './test-seed.js';
+import { handleSeedTestMatches, handleSettleTest, handleUpdateFlags, handleAdminListMatches, handleAddMatch } from './test-seed.js';
 import { handleSeedRealMatches } from './real-seed.js';
+import { ADMIN_HTML } from './admin-html.js';
+import { handleSeedChampionScorer, handleEditEventMarket, handleListEventMarkets, handleSettleEventMarket } from './champion-scorer.js';
+import { handleListUsers, handleDeleteUser, handleGrantPoints } from './user-admin.js';
+import { handleSubmitEvent, handleMySubmissions, handleListPending, handleReviewEvent } from './user-events.js';
+import { handleAddScoreMarket, handleAddScoreAll } from './score-market.js';
+import { handleDuelCreate, handleDuelAccept, handleDuelCancel, handleDuelList, handleSettleDuels } from './duel.js';
 import { FRONTEND_HTML } from './frontend-html.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -57,13 +64,27 @@ export async function route(request, env, url) {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
+  // 管理后台页面（前端会要求输入 ADMIN_TOKEN）
+  if (GET && (p === '/admin' || p === '/admin.html')) {
+    return new Response(ADMIN_HTML, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
 
   // -------- 读接口 --------
   if (GET && p === '/api/markets') return handleMarkets(request, env);
   if (GET && p === '/api/event-markets') return handleEventMarkets(request, env);
+  if (POST && p === '/api/submit-event') return handleSubmitEvent(request, env);
+  if (POST && p === '/api/duel-create') return handleDuelCreate(request, env);
+  if (POST && p === '/api/duel-accept') return handleDuelAccept(request, env);
+  if (POST && p === '/api/duel-cancel') return handleDuelCancel(request, env);
+  if (GET && p === '/api/duels') return handleDuelList(request, env);
+  if (GET && p === '/api/my-submissions') return handleMySubmissions(request, env);
   if (GET && p === '/api/me') return handleMe(request, env);
   if (GET && p === '/api/my-predictions') return handleMyPredictions(request, env);
   if (GET && p === '/api/leaderboard') return handleLeaderboard(request, env);
+  if (GET && p === '/api/achievements') return handleAchievements(request, env);
+  if (GET && p === '/api/achievement-board') return handleAchievementBoard(request, env);
   if (GET && p === '/api/session') return handleSession(request, env);
 
   // -------- 登录认证（邮箱+密码） --------
@@ -100,6 +121,10 @@ export async function route(request, env, url) {
     if (POST && p === '/api/admin/seed-test-matches') {
       return handleSeedTestMatches(request, env);
     }
+    // 只更新国旗（不碰比赛和下注）
+    if (POST && p === '/api/admin/update-flags') {
+      return handleUpdateFlags(request, env);
+    }
     // 录入真实场次（来自截图）
     if (POST && p === '/api/admin/seed-real-matches') {
       return handleSeedRealMatches(request, env);
@@ -107,6 +132,59 @@ export async function route(request, env, url) {
     // 手动结算测试比赛（指定比分）
     if (POST && p === '/api/admin/settle-test') {
       return handleSettleTest(request, env);
+    }
+    // 管理员重置用户密码（朋友忘密码时用）
+    if (POST && p === '/api/admin/reset-password') {
+      return handleAdminResetPassword(request, env);
+    }
+    // 后台：列出所有比赛
+    if (POST && p === '/api/admin/list-matches') {
+      return handleAdminListMatches(request, env);
+    }
+    // 后台：添加单场比赛
+    if (POST && p === '/api/admin/add-match') {
+      return handleAddMatch(request, env);
+    }
+    // 夺冠/金靴市场：录入
+    if (POST && p === '/api/admin/seed-champion-scorer') {
+      return handleSeedChampionScorer(request, env);
+    }
+    // 夺冠/金靴市场：列出（含选项，供编辑）
+    if (POST && p === '/api/admin/list-event-markets') {
+      return handleListEventMarkets(request, env);
+    }
+    // 夺冠/金靴市场：编辑赔率/截止时间
+    if (POST && p === '/api/admin/edit-event-market') {
+      return handleEditEventMarket(request, env);
+    }
+    // 夺冠/金靴市场：结算
+    if (POST && p === '/api/admin/settle-event-market') {
+      return handleSettleEventMarket(request, env);
+    }
+    // 用户管理：列出 / 删除
+    if (POST && p === '/api/admin/list-users') {
+      return handleListUsers(request, env);
+    }
+    if (POST && p === '/api/admin/delete-user') {
+      return handleDeleteUser(request, env);
+    }
+    if (POST && p === '/api/admin/grant-points') {
+      return handleGrantPoints(request, env);
+    }
+    if (POST && p === '/api/admin/list-pending') {
+      return handleListPending(request, env);
+    }
+    if (POST && p === '/api/admin/review-event') {
+      return handleReviewEvent(request, env);
+    }
+    if (POST && p === '/api/admin/add-score-market') {
+      return handleAddScoreMarket(request, env);
+    }
+    if (POST && p === '/api/admin/add-score-all') {
+      return handleAddScoreAll(request, env);
+    }
+    if (POST && p === '/api/admin/settle-duels') {
+      return handleSettleDuels(request, env);
     }
   }
 
