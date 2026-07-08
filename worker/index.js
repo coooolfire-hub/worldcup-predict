@@ -149,7 +149,7 @@ export async function route(request, env, url) {
     if (POST && p === '/api/admin/patch-scores') {
       const { matchId } = await request.json();
       const db = env.DB;
-      const { insertExactScoreTiers, loadPredictionTypeIds } = await import('./score-markets.js');
+      const { insertExactScoreTiers, loadPredictionTypeIds } = await import('./score-market.js');
       const ptypes = await loadPredictionTypeIds(db);
       if (!ptypes['exact_score']) return new Response(JSON.stringify({success:false,error:'exact_score题型不存在'}),{headers:{'Content-Type':'application/json'}});
       await insertExactScoreTiers(db, matchId, ptypes['exact_score']);
