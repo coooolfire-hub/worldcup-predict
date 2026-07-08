@@ -145,6 +145,16 @@ export async function route(request, env, url) {
     if (POST && p === '/api/admin/add-match') {
       return handleAddMatch(request, env);
     }
+    // 后台：给已有比赛补比分玩法
+    if (POST && p === '/api/admin/patch-scores') {
+      const { matchId } = await request.json();
+      const db = env.DB;
+      const { insertExactScoreTiers, loadPredictionTypeIds } = await import('./score-markets.js');
+      const ptypes = await loadPredictionTypeIds(db);
+      if (!ptypes['exact_score']) return new Response(JSON.stringify({success:false,error:'exact_score题型不存在'}),{headers:{'Content-Type':'application/json'}});
+      await insertExactScoreTiers(db, matchId, ptypes['exact_score']);
+      return new Response(JSON.stringify({success:true,message:'已补比分'}),{headers:{'Content-Type':'application/json'}});
+    }
     // 夺冠/金靴市场：录入
     if (POST && p === '/api/admin/seed-champion-scorer') {
       return handleSeedChampionScorer(request, env);
