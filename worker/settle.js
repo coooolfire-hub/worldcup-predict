@@ -59,7 +59,7 @@ async function settleOneMatch(db, match, finalResult) {
 
   const actualByType = {};
   for (const row of typeRows.results) {
-    if (row.code === 'match_result' || row.code === 'both_teams_score') {
+    if (row.code === 'match_result' || row.code === 'both_teams_score' || row.code === 'exact_score') {
       actualByType[row.id] = judgeMatchOutcome(row.code, homeScore, awayScore);
     }
   }

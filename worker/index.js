@@ -22,9 +22,8 @@ import { ADMIN_HTML } from './admin-html.js';
 import { handleSeedChampionScorer, handleEditEventMarket, handleListEventMarkets, handleSettleEventMarket } from './champion-scorer.js';
 import { handleListUsers, handleDeleteUser, handleGrantPoints } from './user-admin.js';
 import { handleSubmitEvent, handleMySubmissions, handleListPending, handleReviewEvent } from './user-events.js';
-import { handleAddScoreMarket, handleAddScoreAll } from './score-market.js';
-import { handleDuelCreate, handleDuelAccept, handleDuelCancel, handleDuelList, handleSettleDuels } from './duel.js';
 import { FRONTEND_HTML } from './frontend-html.js';
+import { handleBackfillExactScoreMarkets } from './score-admin.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -75,10 +74,6 @@ export async function route(request, env, url) {
   if (GET && p === '/api/markets') return handleMarkets(request, env);
   if (GET && p === '/api/event-markets') return handleEventMarkets(request, env);
   if (POST && p === '/api/submit-event') return handleSubmitEvent(request, env);
-  if (POST && p === '/api/duel-create') return handleDuelCreate(request, env);
-  if (POST && p === '/api/duel-accept') return handleDuelAccept(request, env);
-  if (POST && p === '/api/duel-cancel') return handleDuelCancel(request, env);
-  if (GET && p === '/api/duels') return handleDuelList(request, env);
   if (GET && p === '/api/my-submissions') return handleMySubmissions(request, env);
   if (GET && p === '/api/me') return handleMe(request, env);
   if (GET && p === '/api/my-predictions') return handleMyPredictions(request, env);
@@ -106,6 +101,9 @@ export async function route(request, env, url) {
     if (POST && p === '/api/admin/sync-matches') {
       const summary = await syncMatches(env);
       return new Response(JSON.stringify(summary), { headers: JSON_HEADERS });
+    }
+    if (POST && p === '/api/admin/backfill-exact-score') {
+      return handleBackfillExactScoreMarkets(request, env);
     }
     // 初始化/刷新赛事级市场（夺冠、金靴）
     if (POST && p === '/api/admin/seed-events') {
@@ -145,16 +143,6 @@ export async function route(request, env, url) {
     if (POST && p === '/api/admin/add-match') {
       return handleAddMatch(request, env);
     }
-    // 后台：给已有比赛补比分玩法
-    if (POST && p === '/api/admin/patch-scores') {
-      const { matchId } = await request.json();
-      const db = env.DB;
-      const { insertExactScoreTiers, loadPredictionTypeIds } = await import('./score-market.js');
-      const ptypes = await loadPredictionTypeIds(db);
-      if (!ptypes['exact_score']) return new Response(JSON.stringify({success:false,error:'exact_score题型不存在'}),{headers:{'Content-Type':'application/json'}});
-      await insertExactScoreTiers(db, matchId, ptypes['exact_score']);
-      return new Response(JSON.stringify({success:true,message:'已补比分'}),{headers:{'Content-Type':'application/json'}});
-    }
     // 夺冠/金靴市场：录入
     if (POST && p === '/api/admin/seed-champion-scorer') {
       return handleSeedChampionScorer(request, env);
@@ -186,15 +174,6 @@ export async function route(request, env, url) {
     }
     if (POST && p === '/api/admin/review-event') {
       return handleReviewEvent(request, env);
-    }
-    if (POST && p === '/api/admin/add-score-market') {
-      return handleAddScoreMarket(request, env);
-    }
-    if (POST && p === '/api/admin/add-score-all') {
-      return handleAddScoreAll(request, env);
-    }
-    if (POST && p === '/api/admin/settle-duels') {
-      return handleSettleDuels(request, env);
     }
   }
 

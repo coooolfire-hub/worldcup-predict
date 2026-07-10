@@ -70,7 +70,7 @@
   .m-matchup { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:11px; }
   .team-side { display:flex; align-items:center; gap:9px; flex:1; min-width:0; }
   .team-side.team-right { justify-content:flex-end; text-align:right; }
-  .team-flag { font-size:26px; flex-shrink:0; line-height:1; }
+  .team-flag { width:28px; height:21px; flex-shrink:0; border-radius:3px; object-fit:cover; background:var(--surface-2); }
   .team-txt { min-width:0; }
   .team-cn { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .team-en { font-size:10px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -85,6 +85,10 @@
   .multi-pct { font-size:12.5px; font-weight:700; width:38px; text-align:right; font-variant-numeric:tabular-nums; }
   .multi-mult { font-size:11px; color:var(--text-dim); width:36px; text-align:right; }
   .m-foot { display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-dimmer); margin-top:auto; padding-top:11px; border-top:1px solid var(--line); }
+  .market-closed { opacity:0.6; position:relative; }
+  .closed-tag { position:absolute; top:10px; right:10px; background:var(--surface-2); color:var(--text-dim); font-size:11px; padding:3px 9px; border-radius:6px; z-index:2; }
+  .multi-row.closed { cursor:default; opacity:0.7; }
+  .multi-row.closed:hover { background:none; }
   .stake { display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
   .stake.show { display:block; }
   .stake-info { font-size:12px; color:var(--text-dim); margin-bottom:9px; }
@@ -197,8 +201,9 @@
       <div class="section-pad">
         <div class="lb-head">排行榜</div>
         <div class="lb-toggle">
-          <div class="lb-t on" onclick="loadLeaderboard('streak', this)">连胜榜</div>
+          <div class="lb-t on" onclick="loadLeaderboard('score', this)">得分榜</div>
           <div class="lb-t" onclick="loadLeaderboard('points', this)">积分榜</div>
+          <div class="lb-t" onclick="loadLeaderboard('wins', this)">胜利榜</div>
         </div>
         <div class="lb-list" id="lbList"></div>
       </div>
@@ -220,6 +225,25 @@
     </div>
     <div class="page" id="page-achievements">
       <div class="empty">成就系统开发中<br>命中5/10/20连胜可解锁专属称号</div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:20px 16px 100px;font-size:11px;color:var(--text-dimmer);line-height:1.7">
+    先知局 · 内部测试版<br>
+    本平台为朋友间娱乐预测，积分仅供娱乐排名，不可充值、不可兑换、不可提现<br>
+    与任何真实博彩、赌博活动无关 · <span style="color:var(--pm-blue);cursor:pointer" onclick="openDisclaimer()">免责声明</span>
+  </div>
+  <div class="modal-mask" id="disclaimerModal">
+    <div class="modal modal-wrap" style="max-width:420px">
+      <button class="modal-x" onclick="closeDisclaimer()">×</button>
+      <div class="modal-logo"><span class="logo-mark">先</span>免责声明</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.9;margin-top:16px">
+        1. 本平台（先知局）为个人开发的<b style="color:var(--text)">内部测试产品</b>，仅供朋友之间娱乐使用，未对公众开放运营。<br>
+        2. 平台内所有积分<b style="color:var(--text)">仅用于娱乐排名与互动</b>，不具有任何货币价值，<b style="color:var(--text)">不可充值、不可兑换、不可提现、不可转让</b>。<br>
+        3. 平台预测玩法纯属球迷之间的趣味竞猜，<b style="color:var(--text)">与任何形式的真实博彩、赌博活动无关</b>，不涉及任何真实财物的投注或收益。<br>
+        4. 平台展示的比赛信息、赔率倍率均为<b style="color:var(--text)">娱乐参考</b>，不构成任何投注建议，请勿据此进行任何真实赌博行为。<br>
+        5. 用户应遵守所在地法律法规。参与即表示已知悉并同意以上条款。
+      </div>
+      <button class="modal-go" onclick="closeDisclaimer()" style="margin-top:18px">我已了解</button>
     </div>
   </div>
   <div class="tabbar">
@@ -252,7 +276,21 @@
         <span id="switchHint">还没有账号？</span>
         <b style="color:var(--pm-blue);cursor:pointer" onclick="toggleAuthMode()" id="switchBtn">注册</b>
       </div>
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-dimmer);cursor:pointer" onclick="openForgot()">忘记密码？</div>
       <div class="modal-note">本平台积分仅用于娱乐排名，不可兑换、不可提现</div>
+    </div>
+  </div>
+  <div class="modal-mask" id="forgotModal">
+    <div class="modal modal-wrap">
+      <button class="modal-x" onclick="closeForgot()">×</button>
+      <div class="modal-logo"><span class="logo-mark">先</span>找回密码</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.9;margin-top:16px;text-align:center">
+        内测阶段暂未开放自助找回。<br>
+        请联系管理员帮你重置密码：<br>
+        <b style="color:var(--pm-blue)">coooolfire@gmail.com</b><br>
+        <span style="font-size:11px;color:var(--text-dimmer)">告知你的注册邮箱，管理员会帮你重置</span>
+      </div>
+      <button class="modal-go" onclick="closeForgot()" style="margin-top:18px">知道了</button>
     </div>
   </div>
 <script>
@@ -351,24 +389,31 @@ async function loadMarkets(){
   document.getElementById('heroMarkets').textContent=markets.length;
   document.getElementById('heroPredictors').textContent=(tp/1000).toFixed(1)+'k';
 }
-// 把unix时间戳格式化成北京时间显示，如"今天 23:00"/"明天 03:00"/"6月25日 21:00"
+// 北京时间显示，如"6月25日 周四 03:00"，同时保留今天/明天提示
 function formatKickoff(ts){
-  const d=new Date(ts*1000);
-  // 转北京时间（UTC+8）
   const bj=new Date(ts*1000 + 8*3600*1000);
   const now=new Date(Date.now()+8*3600*1000);
   const hh=String(bj.getUTCHours()).padStart(2,'0');
   const mm=String(bj.getUTCMinutes()).padStart(2,'0');
   const dayDiff=Math.floor((Date.UTC(bj.getUTCFullYear(),bj.getUTCMonth(),bj.getUTCDate()) - Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()))/86400000);
-  let dayLabel;
-  if(dayDiff===0) dayLabel='今天';
-  else if(dayDiff===1) dayLabel='明天';
-  else if(dayDiff===2) dayLabel='后天';
-  else dayLabel=`${bj.getUTCMonth()+1}月${bj.getUTCDate()}日`;
-  return `${dayLabel} ${hh}:${mm}`;
+  const weekdays=['周日','周一','周二','周三','周四','周五','周六'];
+  const dateStr=`${bj.getUTCMonth()+1}月${bj.getUTCDate()}日 ${weekdays[bj.getUTCDay()]}`;
+  // 近几天额外加"今天/明天/后天"提示，让人一眼看出紧迫性
+  let prefix='';
+  if(dayDiff===0) prefix='今天 ';
+  else if(dayDiff===1) prefix='明天 ';
+  else if(dayDiff===2) prefix='后天 ';
+  return `${prefix}${dateStr} ${hh}:${mm}`;
 }
 
-// 解析队名 "中文|English|🇵🇹" → {cn, en, flag}；普通字符串则只有cn
+// 国家代码 → flagcdn 国旗图片（电脑手机都能显示彩色国旗）。容错：加载失败显示足球
+function flagImg(code){
+  if(!code) return '<span class="team-flag" style="display:inline-flex;align-items:center;justify-content:center;font-size:15px">⚽</span>';
+  // flagcdn 用小写代码，w40=40px宽
+  const url=`https://flagcdn.com/w40/${code.toLowerCase()}.png`;
+  return `<img class="team-flag" src="${url}" alt="" onerror="this.outerHTML='<span class=\\'team-flag\\' style=\\'display:inline-flex;align-items:center;justify-content:center;font-size:15px\\'>⚽</span>'">`;
+}
+// 解析队名 "中文|English|代码" → {cn, en, flag}
 function parseTeam(raw){
   if(!raw) return {cn:'', en:'', flag:''};
   const parts=String(raw).split('|');
@@ -377,10 +422,13 @@ function parseTeam(raw){
 
 function renderMarkets(markets){
   const el=document.getElementById('marketList');
+  const nowSec=Math.floor(Date.now()/1000);
   el.innerHTML=markets.map((m)=>{
-    const mid=JSON.stringify(m.id); // 数字或字符串都安全传参
+const mid=m.id;
+const midArg=typeof mid==='number'?mid:`'${mid}'`;
+    const closed=(!m.isEvent && m.kickoffTime && nowSec >= m.kickoffTime);
     const rows=m.tiers.map((t,ti)=>`
-      <div class="multi-row" id="row-${m.id}-${ti}" onclick="selectOutcome(${mid}, ${ti})">
+      <div class="multi-row${closed?' closed':''}" id="row-${m.id}-${ti}" ${closed?'':`onclick="selectOutcome(${midArg}, ${ti})"`}
         <span class="multi-name">${t.outcomeLabel}</span>
         <span class="multi-track"><span class="multi-fill" style="width:${t.sharePct}%"></span></span>
         <span class="multi-pct">${t.sharePct}%</span>
@@ -402,23 +450,24 @@ function renderMarkets(markets){
         <div class="m-meta">${metaLeft} · ${m.totalPredictors.toLocaleString()} 人预测</div></div></div>`;
     } else {
       headHtml=`<div class="m-matchup">
-          <div class="team-side"><span class="team-flag">${h.flag||'⚽'}</span><div class="team-txt"><div class="team-cn">${h.cn}</div><div class="team-en">${h.en}</div></div></div>
+          <div class="team-side">${flagImg(h.flag)}<div class="team-txt"><div class="team-cn">${h.cn}</div><div class="team-en">${h.en}</div></div></div>
           <span class="vs-sep">VS</span>
-          <div class="team-side team-right"><div class="team-txt"><div class="team-cn">${a.cn}</div><div class="team-en">${a.en}</div></div><span class="team-flag">${a.flag||'⚽'}</span></div>
+          <div class="team-side team-right"><div class="team-txt"><div class="team-cn">${a.cn}</div><div class="team-en">${a.en}</div></div>${flagImg(a.flag)}</div>
         </div>
         <div class="m-meta" style="text-align:center;margin-bottom:11px">${metaLeft} · ${m.totalPredictors.toLocaleString()} 人预测</div>`;
     }
-    return `<div class="market" data-market="${m.id}" data-search="${h.cn}${h.en}${a.cn}${a.en}${m.stage}${m.title||''}">
+    return `<div class="market${closed?' market-closed':''}" data-market="${m.id}" data-search="${h.cn}${h.en}${a.cn}${a.en}${m.stage}${m.title||''}">
+      ${closed?'<div class="closed-tag">已截止</div>':''}
       ${headHtml}
       ${rows}
       <div class="stake" id="stake-${m.id}">
         <div class="stake-info">预测 <b id="sel-label-${m.id}">—</b>，倍率 <b id="sel-mult-${m.id}">—</b></div>
-        <div class="stake-ctrl"><div class="stake-in"><input type="number" id="stake-input-${m.id}" placeholder="输入点数" oninput="calcPayout(${mid})"><span>点</span></div>
-          <button class="stake-go" onclick="submitPredict(${mid})">确认预测</button></div>
-        <div class="stake-chips"><span class="chip" onclick="setStake(${mid},100)">100</span><span class="chip" onclick="setStake(${mid},500)">500</span><span class="chip" onclick="setStake(${mid},1000)">1000</span></div>
+        <div class="stake-ctrl"><div class="stake-in"><input type="number" id="stake-input-${m.id}" placeholder="输入点数" oninput="calcPayout(${midArg})"><span>点</span></div>
+          <button class="stake-go" onclick="submitPredict(${midArg})">确认预测</button></div>
+        <div class="stake-chips"><span class="chip" onclick="setStake(${midArg},100)">100</span><span class="chip" onclick="setStake(${midArg},500)">500</span><span class="chip" onclick="setStake(${midArg},1000)">1000</span></div>
         <div class="stake-payout" id="payout-${m.id}"></div>
       </div>
-      <div class="m-foot"><span>🔒 倍率开赛前已锁定</span><span>命中按倍率发放</span></div>
+      <div class="m-foot"><span>${closed?'⏱ 比赛已开始':'🔒 倍率开赛前已锁定'}</span><span>${closed?'停止下注':'命中按倍率发放'}</span></div>
     </div>`;
   }).join('');
   window._markets=markets;
@@ -452,7 +501,6 @@ async function submitPredict(id){
   const tier=market.tiers[sel.tierIndex];
   const stake=parseInt(document.getElementById(`stake-input-${id}`).value||'0',10);
   if(stake<=0) return showToast('请输入预测点数');
-  if(stake>tier.stakeCap) return showToast(`单次最多预测 ${tier.stakeCap.toLocaleString()} 点`);
   try{
     let data;
     if(market.isEvent){
@@ -506,11 +554,12 @@ async function loadMyBets(){
 async function loadLeaderboard(type,btn){
   if(btn) document.querySelectorAll('.lb-t').forEach(b=>b.classList.toggle('on',b===btn));
   let rows;
-  try{ rows=(await api(`/api/leaderboard?type=${type}`)).rows; }catch(e){ rows=DEMO.leaderboard[type]; }
+  try{ rows=(await api(`/api/leaderboard?type=${type}`)).rows||[]; }catch(e){ rows=[]; }
+  if(rows.length===0){ document.getElementById('lbList').innerHTML='<div class="empty" style="padding:40px">还没有数据，快去预测吧</div>'; return; }
   document.getElementById('lbList').innerHTML=rows.map((r,i)=>{
     const av=r.avatar||AVATARS[i%AVATARS.length];
-    const main=type==='streak'?`<div class="lb-val">🔥 ${r.current_streak}</div>`:`<div class="lb-val">${(r.points_balance||0).toLocaleString()}</div>`;
-    const sub=type==='streak'?`最高 ${r.best_streak} 连胜`:'当前积分';
+    const main=type==='wins'?`<div class="lb-val">🏆 ${r.win_count}</div>`:(type==='score'?`<div class="lb-val">💰 ${(r.total_won||0).toLocaleString()}</div>`:`<div class="lb-val">${(r.points_balance||0).toLocaleString()}</div>`);
+    const sub=type==='wins'?'累计猜中场次':(type==='score'?'累计得分':'当前积分');
     return `<div class="lb-row"><span class="lb-rank">${i+1}</span><div class="lb-av">${av}</div><div class="lb-info"><div class="lb-name">${r.nickname||'匿名先知'}</div><div class="lb-sub">${sub}</div></div>${main}</div>`;
   }).join('');
 }
@@ -519,7 +568,7 @@ function switchTab(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById('page-'+name).classList.add('on');
   document.querySelectorAll('.tab, .nav-item').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
-  if(name==='leaderboard') loadLeaderboard('streak',document.querySelector('.lb-t'));
+  if(name==='leaderboard') loadLeaderboard('score',document.querySelector('.lb-t'));
   if(name==='me') loadMe();
 }
 let toastTimer;
@@ -529,6 +578,10 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 /* 登录 */
 function openLogin(){ document.getElementById('loginModal').classList.add('show'); }
 function closeLogin(){ document.getElementById('loginModal').classList.remove('show'); }
+function openDisclaimer(){ document.getElementById('disclaimerModal').classList.add('show'); }
+function closeDisclaimer(){ document.getElementById('disclaimerModal').classList.remove('show'); }
+function openForgot(){ document.getElementById('forgotModal').classList.add('show'); }
+function closeForgot(){ document.getElementById('forgotModal').classList.remove('show'); }
 
 // token 存取（真实浏览器用localStorage；预览环境不支持则降级为内存变量）
 let _memToken = null;

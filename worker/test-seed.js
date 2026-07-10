@@ -11,8 +11,7 @@
 // ============================================================
 
 import { estimateProbs, multipliersFromProbs, binaryMultipliers } from './odds.js';
-import { judgeScore, addScoreTiers } from './score-market.js';
-
+import { insertExactScoreTiers, loadPredictionTypeIds } from './score-markets.js';
 function bjTime(str) {
   const [date, time] = str.split(' ');
   const [y, mo, d] = date.split('-').map(Number);
@@ -141,18 +140,34 @@ export async function handleSettleTest(request, env) {
 
   const typeRows = await db.prepare(`SELECT DISTINCT pt.id, pt.code FROM match_outcome_tiers t JOIN prediction_types pt ON pt.id=t.prediction_type_id WHERE t.match_id=?`).bind(matchId).all();
   const actualByType = {};
-  for (const row of typeRows.results) {
+for (const row of typeRows.results) {
     if (row.code === 'match_result') actualByType[row.id] = homeScore > awayScore ? 'home_win' : homeScore < awayScore ? 'away_win' : 'draw';
-    else if (row.code === 'both_teams_score') actualByType[row.id] = (homeScore > 0 && awayScore > 0) ? 'yes' : 'no';
-    else if (row.code === 'exact_score') actualByType[row.id] = judgeScore(homeScore, awayScore);
-  }
-
+    else if (row.code === 'both_teams_score') {
+      // yes=双方都进球，no=双方都0进球（严格0:0）
+      if (homeScore > 0 && awayScore > 0) actualByType[row.id] = 'yes';
+      else if (homeScore === 0 && awayScore === 0) actualByType[row.id] = 'no';
+      else actualByType[row.id] = 'none'; // 一方进一方0 - 两个选项都不中
+    }
+    else if (row.code === 'exact_score') {
+      // 比分预测，outcome_key格式：s_主_客（如 s_2_1）或 s_other
+      const key = `s_${homeScore}_${awayScore}`;
+      actualByType[row.id] = key;
+      actualByType[row.id + '_fallback'] = 's_other';
+    }
+ }
   const pending = await db.prepare(`SELECT * FROM predictions WHERE match_id=? AND status='pending'`).bind(matchId).all();
   let settledCount = 0;
   for (const pred of pending.results) {
     const actual = actualByType[pred.prediction_type_id];
     if (actual === undefined) continue;
-    const won = actual === pred.outcome_key;
+let won = actual === pred.outcome_key;
+// 比分预测：如果没匹配到精确比分，检查是否押的 s_other 且实际不在预定比分列表中
+if (!won && pred.outcome_key === 's_other') {
+  const fallback = actualByType[pred.prediction_type_id + '_fallback'];
+  // 只有精确key不在标准列表中，s_other 才中
+  const tierExists = await db.prepare('SELECT id FROM match_outcome_tiers WHERE match_id=? AND prediction_type_id=? AND outcome_key=?').bind(matchId, pred.prediction_type_id, actual).first();
+  if (!tierExists) won = true;
+}
     const payout = won ? Math.round(pred.points_staked * pred.multiplier_locked) : 0;
     await db.prepare(`UPDATE predictions SET status=?, points_awarded=?, settled_at=? WHERE id=?`).bind(won ? 'won' : 'lost', payout, Math.floor(Date.now()/1000), pred.id).run();
     if (won && payout > 0) {
@@ -238,10 +253,7 @@ export async function handleAddMatch(request, env) {
   await db.prepare(`INSERT INTO match_outcome_tiers (match_id, prediction_type_id, outcome_key, outcome_label, multiplier, stake_cap) VALUES (?, ?, 'no', '双方0进球', ?, 10000)`).bind(matchId, btsType, bts.no).run();
   await db.prepare('UPDATE matches SET tiers_locked_at=? WHERE id=?').bind(now, matchId).run();
 
-  // 自动加上猜比分玩法
-  try { await addScoreTiers(db, matchId); } catch (e) {}
-
-  return jsonOk({ message: `已添加 ${b.home} vs ${b.away}（含比分玩法）`, matchId });
+  return jsonOk({ message: `已添加 ${b.home} vs ${b.away}`, matchId });
 }
 
 function jsonOk(body) { return new Response(JSON.stringify({ success: true, ...body }), { headers: { 'Content-Type': 'application/json' } }); }
