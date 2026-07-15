@@ -189,7 +189,7 @@
         <div class="hero-l"><h2>2026 世界杯 · 全民预测</h2><p>预测越准排名越高，赢取专属称号</p></div>
         <div class="hero-stat">
           <div><div class="n" id="heroMarkets">6</div><div class="l">进行中市场</div></div>
-          <div><div class="n" id="heroPredictors">64.5k</div><div class="l">累计预测人次</div></div>
+          <div><div class="n" id="heroPredictors">0</div><div class="l">累计预测人次</div></div>
         </div>
       </div>
       <div class="cats" id="cats">
@@ -222,9 +222,33 @@
       </div>
       <div class="lb-head" style="font-size:15px;padding-top:8px">我的投注记录</div>
       <div class="lb-list" id="myBets"></div>
-    </div>
-    <div class="page" id="page-achievements">
-      <div class="empty">成就系统开发中<br>命中5/10/20连胜可解锁专属称号</div>
+    </div><div class="page" id="page-achievements">
+      <div class="lb-toggle" style="padding:12px 16px 8px">
+        <div class="lb-t on" id="achTab-mine" onclick="switchAchView('mine')">我的成就</div>
+        <div class="lb-t" id="achTab-board" onclick="switchAchView('board')">成就榜</div>
+      </div>
+      <div id="achMine">
+        <div style="display:flex;gap:10px;padding:12px 16px">
+          <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <b id="statWins" style="font-size:20px">0</b>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px">猜中</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <b id="statLosses" style="font-size:20px">0</b>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px">失手</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <b id="statStreak" style="font-size:20px">0</b>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px">连登</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <b id="statScore" style="font-size:20px">0</b>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px">总得分</div>
+          </div>
+        </div>
+        <div id="achList" style="padding:0 16px 20px"></div>
+      </div>
+      <div id="achBoard" style="display:none;padding:0 16px 20px"></div>
     </div>
   </div>
   <div style="text-align:center;padding:20px 16px 100px;font-size:11px;color:var(--text-dimmer);line-height:1.7">
@@ -387,7 +411,7 @@ async function loadMarkets(){
   renderMarkets(markets);
   const tp=markets.reduce((s,m)=>s+m.totalPredictors,0);
   document.getElementById('heroMarkets').textContent=markets.length;
-  document.getElementById('heroPredictors').textContent=(tp/1000).toFixed(1)+'k';
+  document.getElementById('heroPredictors').textContent=(tp||0).toLocaleString();
 }
 // 北京时间显示，如"6月25日 周四 03:00"，同时保留今天/明天提示
 function formatKickoff(ts){
@@ -551,6 +575,60 @@ async function loadMyBets(){
     </div>`;
   }).join('');
 }
+let _achView='mine';
+function switchAchView(v){
+  _achView=v;
+  document.getElementById('achTab-mine').classList.toggle('on',v==='mine');
+  document.getElementById('achTab-board').classList.toggle('on',v==='board');
+  document.getElementById('achMine').style.display=v==='mine'?'block':'none';
+  document.getElementById('achBoard').style.display=v==='board'?'block':'none';
+  if(v==='board') loadAchBoard();
+}
+async function loadAchievements(){
+  const userId=window.CURRENT_USER_ID;
+  if(!userId){ document.getElementById('achList').innerHTML='<div class="empty" style="padding:40px;text-align:center;color:var(--text-dim)">登录后查看成就</div>'; return; }
+  try{
+    const d=await (await fetch(`/api/achievements?userId=${userId}`)).json();
+    const s=d.stats||{};
+    document.getElementById('statWins').textContent=s.wins||0;
+    document.getElementById('statLosses').textContent=s.losses||0;
+    document.getElementById('statStreak').textContent=s.streak||0;
+    document.getElementById('statScore').textContent=(s.score||0).toLocaleString();
+    const groups={};
+    (d.achievements||[]).forEach(a=>{if(!groups[a.group])groups[a.group]={icon:a.icon,items:[]};groups[a.group].items.push(a);});
+    document.getElementById('achList').innerHTML=Object.entries(groups).map(([name,g])=>`
+      <div style="margin-top:16px">
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px">${g.icon} ${name}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${g.items.map(a=>`<div style="flex:1;min-width:calc(20% - 8px);background:${a.unlocked?'var(--pm-blue-soft)':'var(--surface)'};border:1px solid ${a.unlocked?'var(--pm-blue)':'var(--line)'};border-radius:10px;padding:10px 6px;text-align:center;font-size:12px">
+            <div style="font-weight:600;color:${a.unlocked?'var(--pm-blue)':'var(--text-dim)'}">${a.tier.toLocaleString()}</div>
+            <div style="font-size:10px;color:var(--text-dimmer);margin-top:3px">${a.current.toLocaleString()}/${a.tier.toLocaleString()}</div>
+          </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }catch(e){ console.log(e); }
+}
+async function loadAchBoard(){
+  try{
+    const d=await (await fetch('/api/achievement-board')).json();
+    const rows=d.board||[];
+    if(rows.length===0){ document.getElementById('achBoard').innerHTML='<div class="empty" style="padding:40px;text-align:center;color:var(--text-dim)">还没人解锁成就</div>'; return; }
+    document.getElementById('achBoard').innerHTML=rows.map((r,i)=>`
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:24px;font-weight:700;color:var(--pm-blue)">${i+1}</span>
+          <div style="flex:1">
+            <div style="font-weight:600">${r.nickname||'匿名先知'}</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px">中${r.stats.wins} · 失${r.stats.losses} · 连登${r.stats.streak} · 得分${(r.stats.score||0).toLocaleString()}</div>
+          </div>
+          <div style="font-size:15px;font-weight:700">🏅 ${r.unlockedCount}</div>
+        </div>
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
+          ${r.unlockedList.map(t=>`<span style="font-size:10px;background:var(--pm-blue-soft);color:var(--pm-blue);padding:3px 7px;border-radius:5px">${t}</span>`).join('')}
+        </div>
+      </div>`).join('');
+  }catch(e){ console.log(e); }
+}
 async function loadLeaderboard(type,btn){
   if(btn) document.querySelectorAll('.lb-t').forEach(b=>b.classList.toggle('on',b===btn));
   let rows;
@@ -569,6 +647,7 @@ function switchTab(name){
   document.getElementById('page-'+name).classList.add('on');
   document.querySelectorAll('.tab, .nav-item').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
   if(name==='leaderboard') loadLeaderboard('score',document.querySelector('.lb-t'));
+  if(name==='achievements') loadAchievements();
   if(name==='me') loadMe();
 }
 let toastTimer;
