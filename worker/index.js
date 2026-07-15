@@ -23,7 +23,7 @@ import { handleSeedChampionScorer, handleEditEventMarket, handleListEventMarkets
 import { handleListUsers, handleDeleteUser, handleGrantPoints } from './user-admin.js';
 import { handleSubmitEvent, handleMySubmissions, handleListPending, handleReviewEvent } from './user-events.js';
 import { FRONTEND_HTML } from './frontend-html.js';
-import { handleBackfillExactScoreMarkets } from './score-admin.js';
+import { handleBackfillExactScoreMarkets, handleCorrectMatchScore } from './score-admin.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -130,6 +130,10 @@ export async function route(request, env, url) {
     // 手动结算测试比赛（指定比分）
     if (POST && p === '/api/admin/settle-test') {
       return handleSettleTest(request, env);
+    }
+    // 修正已结算比赛的错误比分（撤销旧结算追回积分，按新比分重新结算）
+    if (POST && p === '/api/admin/correct-score') {
+      return handleCorrectMatchScore(request, env);
     }
     // 管理员重置用户密码（朋友忘密码时用）
     if (POST && p === '/api/admin/reset-password') {
