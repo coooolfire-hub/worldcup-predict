@@ -19,7 +19,7 @@ import { seedEventMarkets } from './seed-events.js';
 import { handleSeedTestMatches, handleSettleTest, handleUpdateFlags, handleAdminListMatches, handleAddMatch } from './test-seed.js';
 import { handleSeedRealMatches } from './real-seed.js';
 import { ADMIN_HTML } from './admin-html.js';
-import { handleSeedChampionScorer, handleEditEventMarket, handleListEventMarkets, handleSettleEventMarket } from './champion-scorer.js';
+import { handleSeedChampionScorer, handleEditEventMarket, handleListEventMarkets, handleSettleEventMarket, handleCorrectEventMarket } from './champion-scorer.js';
 import { handleListUsers, handleDeleteUser, handleGrantPoints } from './user-admin.js';
 import { handleSubmitEvent, handleMySubmissions, handleListPending, handleReviewEvent } from './user-events.js';
 import { FRONTEND_HTML } from './frontend-html.js';
@@ -162,6 +162,10 @@ export async function route(request, env, url) {
     // 夺冠/金靴市场：结算
     if (POST && p === '/api/admin/settle-event-market') {
       return handleSettleEventMarket(request, env);
+    }
+    // 夺冠/金靴市场：修正已结算的错误获胜选项
+    if (POST && p === '/api/admin/correct-event-market') {
+      return handleCorrectEventMarket(request, env);
     }
     // 用户管理：列出 / 删除
     if (POST && p === '/api/admin/list-users') {

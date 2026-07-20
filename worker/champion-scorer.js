@@ -162,5 +162,68 @@ export async function handleSettleEventMarket(request, env) {
   return jsonOk({ message: `市场已结算，处理 ${settled} 条预测` });
 }
 
+// ---------- 后台：修正已结算的赛事市场（夺冠/金靴填错获胜选项） ----------
+// body: { marketId, winnerKey }
+// 逻辑和比分修正一致：撤销旧结算发的积分，退回pending，按新的获胜key重新结算
+export async function handleCorrectEventMarket(request, env) {
+  const { marketId, winnerKey } = await request.json();
+  const db = env.DB;
+  if (!marketId || !winnerKey) return jsonError('缺少 marketId / winnerKey', 400);
+
+  const market = await db.prepare("SELECT * FROM event_markets WHERE id=?").bind(marketId).first();
+  if (!market) return jsonError('市场不存在', 404);
+  if (market.status !== 'settled') return jsonError('该市场还没结算，直接填获胜key点结算即可，不用走这个接口', 400);
+  if (market.winner_key === winnerKey) return jsonError('新的获胜key和原来一样，无需修改', 400);
+
+  const oldWinner = market.winner_key;
+
+  // 1) 撤销旧结算
+  const settledPreds = await db.prepare(
+    "SELECT * FROM event_predictions WHERE market_id=? AND status IN ('won','lost')"
+  ).bind(marketId).all();
+
+  let reversedCount = 0;
+  let reversedPoints = 0;
+  for (const pred of settledPreds.results) {
+    if (pred.points_awarded > 0) {
+      await db.prepare(
+        "INSERT INTO point_ledger (user_id, change, reason, ref_table, ref_id) VALUES (?, ?, 'event_payout', 'event_predictions', ?)"
+      ).bind(pred.user_id, -pred.points_awarded, pred.id).run();
+      await db.prepare('UPDATE users SET points_balance = points_balance - ? WHERE id=?')
+        .bind(pred.points_awarded, pred.user_id).run();
+      reversedPoints += pred.points_awarded;
+    }
+    await db.prepare("UPDATE event_predictions SET status='pending', points_awarded=0, settled_at=NULL WHERE id=?")
+      .bind(pred.id).run();
+    reversedCount++;
+  }
+
+  // 2) 写入正确的获胜key
+  await db.prepare("UPDATE event_markets SET status='settled', winner_key=?, settled_at=? WHERE id=?")
+    .bind(winnerKey, Math.floor(Date.now() / 1000), marketId).run();
+
+  // 3) 按新获胜key重新结算
+  const pending = await db.prepare("SELECT * FROM event_predictions WHERE market_id=? AND status='pending'").bind(marketId).all();
+  let settledCount = 0;
+  let newPayoutTotal = 0;
+  for (const p of pending.results) {
+    const won = p.outcome_key === winnerKey;
+    const payout = won ? Math.round(p.points_staked * p.multiplier_locked) : 0;
+    await db.prepare("UPDATE event_predictions SET status=?, points_awarded=?, settled_at=? WHERE id=?")
+      .bind(won ? 'won' : 'lost', payout, Math.floor(Date.now() / 1000), p.id).run();
+    if (won && payout > 0) {
+      await db.prepare("INSERT INTO point_ledger (user_id, change, reason, ref_table, ref_id) VALUES (?, ?, 'event_payout', 'event_predictions', ?)")
+        .bind(p.user_id, payout, p.id).run();
+      await db.prepare('UPDATE users SET points_balance = points_balance + ? WHERE id=?').bind(payout, p.user_id).run();
+      newPayoutTotal += payout;
+    }
+    settledCount++;
+  }
+
+  return jsonOk({
+    message: `获胜选项已从 ${oldWinner} 改为 ${winnerKey}，撤销旧结算 ${reversedCount} 条（追回 ${reversedPoints} 积分），重新结算 ${settledCount} 条（发放 ${newPayoutTotal} 积分）`,
+  });
+}
+
 function jsonOk(body) { return new Response(JSON.stringify({ success: true, ...body }), { headers: { 'Content-Type': 'application/json' } }); }
 function jsonError(message, status) { return new Response(JSON.stringify({ success: false, error: message }), { status, headers: { 'Content-Type': 'application/json' } }); }
